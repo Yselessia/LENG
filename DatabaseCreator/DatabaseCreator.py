@@ -3,29 +3,42 @@ databasename = "lengdatabase"
 filename="test"                                     #test values
 databasename = "mydatabase"
 
-file=open(filename+".txt","r+")                     #opens file
+import re                                           #imports regex
+
+file=open(filename+".txt","r")                      #opens file
 f= file.read()
-f.splitlines()                                      #creates copy as a list of lines
-
-fnew = []
-for i in range(len(f)):       #creates copy of list without junk data
-    line = f[i-1] 
-    if line.find("Oxford",1,8) == -1:
-        fnew.append(line)
-
-
-for line in fnew:
-    line = line[:len(line)-5]+line[len(line)-2:]    #removes comprehension lvl
-
-file.writelines(fnew)                               #saves to file
+f= re.split("1|2",f)                                #copt of file => list of lines
 file.close
 
-#for testing
-#print file
-#end testing
+with open(filename+".txt",'w') as file:             #clears file
+    pass
 
+with open(filename+".txt","a") as file:             
+    for line in f:
+        line = line[:len(line)-2]                   #removes comprehension lvl
+        x = line.count(",")
+        if x > 0:                                   #checks for comma
+            x = line.find(",")
+            if x == 0:                              #if the comma is at the start of the line
+                wordend= prevline.find(" ")
+                prevword = prevline[:wordend]
+                pos = line[1:]
+            else:
+                wordend= line.find(" ")
+                prevword = line[:wordend]
+                line1 = line[:x]+"\n"
+                print(line1)
+                file.write(line1)                    #saves line to file this is bad
+                pos = line[x+1:]
+            line = prevword + pos
+        else:
+            prevline = line
+        print(line)
+        file.write(line)                            #saves line to file
 
-import mysql.connector
+        
+
+'''import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
@@ -34,7 +47,7 @@ mydb = mysql.connector.connect(
 mycursor = mydb.cursor()
 
 mycursor.execute("CREATE DATABASE" + databasename)
-mycursor.execute('''CREATE TABLE tblWords (
+mycursor.execute(#CREATE TABLE tblWords (
                  lemma VARCHAR(20) NOT NULL, 
                  partOfSpeech ENUM('noun','pronoun','verb','adverb','adjective','preposition','conjuction','interjection','article') NOT NULL,
                  irregularNoun BOOLEAN,
@@ -48,7 +61,7 @@ mycursor.execute('''CREATE TABLE tblWords (
                  PRIMARY KEY (irregID)
                  FOREIGN KEY (singular) REFERENCES tblWords(lemma)
                  FOREIGN KEY (plural) REFERENCES tblWords(lemma)
-                 );''')
+                 );#)
 
 
 
@@ -60,3 +73,4 @@ for x in mycursor:
   print(x) 
 mycursor.execute("DROP DATABASE databasename;")
 #end testing section
+'''
