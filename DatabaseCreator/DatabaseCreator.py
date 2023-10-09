@@ -8,22 +8,21 @@ f= file.read()
 f.splitlines()                                      #creates copy as a list of lines
 
 fnew = []
-for line in f:                                      #creates copy of list without junk data
+for i in range(len(f)):       #creates copy of list without junk data
+    line = f[i-1] 
     if line.find("Oxford",1,8) == -1:
-        line= fnew.append 
-        
+        fnew.append(line)
+
+
 for line in fnew:
     line = line[:len(line)-5]+line[len(line)-2:]    #removes comprehension lvl
 
 file.writelines(fnew)                               #saves to file
-file.flush
-
-#for testing
-f= file.read()
-print(f)
-#end testing
 file.close
 
+#for testing
+#print file
+#end testing
 
 
 import mysql.connector
