@@ -1,9 +1,12 @@
 filename="Oxford5000"
+fileirregv="irregverbs"
+fileirregn="irregnouns"
 databasename = "lengdatabase"
-filename="test"                                     #test values
+fileirregv=""                                       #test values
+filename=""
+fileirregn="test"
 databasename = "mydatabase"
 
-'''
 import re                                           #imports regex
 
 file=open(filename+".txt","r")                      #opens file
@@ -11,7 +14,7 @@ f= file.read()
 f= re.split("1|2",f)                                #copt of file => list of lines
 file.close
 
-with open(filename+".txt",'w') as file:             #clears file
+with open(filename+".txt","w") as file:             #clears file
     pass
 
 with open(filename+".txt","a") as file:             
@@ -28,17 +31,22 @@ with open(filename+".txt","a") as file:
                 wordend= line.find(" ")
                 prevword = line[:wordend]
                 line1 = line[:x]+"\n"
-                print(line1)
                 file.write(line1)                    #saves line to file this is bad
                 pos = line[x+1:]
             line = prevword + pos
         else:
             prevline = line
-        print(line)
         file.write(line)                            #saves line to file
-'''
-        
 
+with open(fileirregv+".txt","r+") as file:          #not done - verbs -
+    f= file.read()
+    f = re.sub(" /.+/","",f)
+    file.write(f)
+
+with open(fileirregn+".txt","") as file:            #not done - nouns - 
+    pass
+        
+'''
 import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
@@ -48,7 +56,7 @@ mydb = mysql.connector.connect(
 mycursor = mydb.cursor()
 
 mycursor.execute("CREATE DATABASE" + databasename)
-mycursor.execute('''CREATE TABLE tblWords (
+mycursor.execute(#CREATE TABLE tblWords (
                  lemma VARCHAR(20) NOT NULL, 
                  partOfSpeech ENUM('noun','pronoun','verb','adverb','adjective','preposition','conjuction','interjection','article') NOT NULL,
                  irregularNoun BOOLEAN,
@@ -62,7 +70,7 @@ mycursor.execute('''CREATE TABLE tblWords (
                  PRIMARY KEY (irregID)
                  FOREIGN KEY (singular) REFERENCES tblWords(lemma)
                  FOREIGN KEY (plural) REFERENCES tblWords(lemma)
-                 );''')
+                 );#)
 
 
 
