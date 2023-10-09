@@ -7,7 +7,11 @@ file=open(filename+".txt","r+")                     #opens file
 f= file.read()
 f.splitlines()                                      #creates copy as a list of lines
 
-fnew = [line.startswith("©") != True for line in f] #creates copy of list without junk data
+fnew = []
+for line in f:                                      #creates copy of list without junk data
+    if line.find("Oxford",1,8) == -1:
+        line= fnew.append 
+        
 for line in fnew:
     line = line[:len(line)-5]+line[len(line)-2:]    #removes comprehension lvl
 
