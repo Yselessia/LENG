@@ -3,6 +3,7 @@ databasename = "lengdatabase"
 filename="test"                                     #test values
 databasename = "mydatabase"
 
+'''
 import re                                           #imports regex
 
 file=open(filename+".txt","r")                      #opens file
@@ -35,10 +36,10 @@ with open(filename+".txt","a") as file:
             prevline = line
         print(line)
         file.write(line)                            #saves line to file
-
+'''
         
 
-'''import mysql.connector
+import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
@@ -47,7 +48,7 @@ mydb = mysql.connector.connect(
 mycursor = mydb.cursor()
 
 mycursor.execute("CREATE DATABASE" + databasename)
-mycursor.execute(#CREATE TABLE tblWords (
+mycursor.execute('''CREATE TABLE tblWords (
                  lemma VARCHAR(20) NOT NULL, 
                  partOfSpeech ENUM('noun','pronoun','verb','adverb','adjective','preposition','conjuction','interjection','article') NOT NULL,
                  irregularNoun BOOLEAN,
@@ -61,9 +62,7 @@ mycursor.execute(#CREATE TABLE tblWords (
                  PRIMARY KEY (irregID)
                  FOREIGN KEY (singular) REFERENCES tblWords(lemma)
                  FOREIGN KEY (plural) REFERENCES tblWords(lemma)
-                 );#)
-
-
+                 );''')
 
 
 
