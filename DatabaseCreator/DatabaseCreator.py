@@ -2,17 +2,32 @@ filename="Oxford5000"
 fileirregv="irregverbs"
 fileirregn="irregnouns"
 databasename = "lengdatabase"
-fileirregv=""                                       #test values
+fileirregv=""                 #test values
 filename=""
-fileirregn="test"
-databasename = "mydatabase"
+fileirregn=""
+databasename = ""
 
 import re                                           #imports regex
 
-file=open(filename+".txt","r")                      #opens file
-f= file.read()
-f= re.split("1|2",f)                                #copt of file => list of lines
-file.close
+def addword(word,pos,dictionary,duplikey):
+    if word not in dictionary:
+        dictionary[word] = pos
+    else:
+        origvalue= dictionary[word]
+        if type(origvalue[1]) == int:
+            origvalue.append(duplikey)
+            dictionary.update({word:origvalue})
+        else:
+            dictionary.update({word:[duplikey,(duplikey+1)]}) 
+            dictionary[duplikey] = origvalue
+            duplikey +=1
+        dictionary[duplikey] = pos
+        duplikey +=1
+    return duplikey
+
+with open(filename+".txt","r") as file:             #opens file
+    f= file.read()
+    f= re.split("1|2",f)                            #copy of file => list of lines
 
 with open(filename+".txt","w") as file:             #clears file
     pass
@@ -38,14 +53,30 @@ with open(filename+".txt","a") as file:
             prevline = line
         file.write(line)                            #saves line to file
 
+dictionary={}
+duplikey=0
+with open(filename+".txt","r") as file:
+    f= file.read()
+    f= f.split("\n")
+    for line in f:
+        wordend= line.find(" ")
+        word = line[:wordend]
+        pos = line[wordend+1:].replace(".\n","")
+        duplikey = addword(word,pos,dictionary,duplikey)
+
 with open(fileirregv+".txt","r+") as file:          #not done - verbs -
     f= file.read()
-    f = re.sub(" /.+/","",f)
-    file.write(f)
+    f= re.sub(" /.+/|\n	\n","",f)
+    f= f.split("\n")
+    for line in f:
+        file.write(line)
 
-with open(fileirregn+".txt","") as file:            #not done - nouns - 
+
+with open(fileirregn+".txt","r+") as file:            #not done - nouns - 
     pass
-        
+
+#!! THIS SHOULD be a hash table NOT A DATABASE 
+
 '''
 import mysql.connector
 mydb = mysql.connector.connect(
