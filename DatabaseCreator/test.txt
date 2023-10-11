@@ -1,31 +1,17 @@
-lean
-	
-
-leant/leaned
-	
-
-leant/leaned
-
-put
-	
-
-put
-	
-
-put
-
-quit
-	
-
-quit
-	
-
-quit
-
-read /ri:d/
-	
-
-read /red/
-	
-
-read /red/
+abundance n. C1
+abuse n., v. C1
+academy n. C1
+accomplishment n. C1
+accordance n. C1
+accordingly adv. C1
+accountability n. C1
+accountable adj. C1
+accountant n. B2
+accumulate v. C1
+accumulation n. C1
+accuracy n. B2
+accurately adv. B2
+accusation n. C1
+accused n. C1
+acid n. B2, adj. C1
+acquisition n. C1

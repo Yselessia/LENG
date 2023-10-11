@@ -2,26 +2,30 @@ filename="Oxford5000"
 fileirregv="irregverbs"
 fileirregn="irregnouns"
 databasename = "lengdatabase"
-fileirregv=""                 #test values
-filename=""
-fileirregn=""
+fileirregv="testv"                 #test values
+filename="test"
+fileirregn="testn"
 databasename = ""
 
 import re                                           #imports regex
 
-def addword(word,pos,dictionary,duplikey):
+def addword(line,dictionary,duplikey):
+    wordend= line.find(" ")
+    word= line[:wordend]
+    pos= [line[wordend+1:].replace(".\n","")]
+    posdata= [pos,False]
     if word not in dictionary:
-        dictionary[word] = pos
+        dictionary[word] = posdata
     else:
         origvalue= dictionary[word]
-        if type(origvalue[1]) == int:
+        if type(origvalue[0]) == int:
             origvalue.append(duplikey)
             dictionary.update({word:origvalue})
         else:
             dictionary.update({word:[duplikey,(duplikey+1)]}) 
             dictionary[duplikey] = origvalue
             duplikey +=1
-        dictionary[duplikey] = pos
+        dictionary[duplikey] = posdata
         duplikey +=1
     return duplikey
 
@@ -29,10 +33,9 @@ with open(filename+".txt","r") as file:             #opens file
     f= file.read()
     f= re.split("1|2",f)                            #copy of file => list of lines
 
-with open(filename+".txt","w") as file:             #clears file
-    pass
-
-with open(filename+".txt","a") as file:             
+dictionary={}
+duplikey=0
+with open(filename+".txt","w") as file:             
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
         x = line.count(",")
@@ -46,31 +49,55 @@ with open(filename+".txt","a") as file:
                 wordend= line.find(" ")
                 prevword = line[:wordend]
                 line1 = line[:x]+"\n"
-                file.write(line1)                    #saves line to file this is bad
+                file.write(line1)                    #saves line to file
+                duplikey = addword(line1,dictionary,duplikey)
                 pos = line[x+1:]
             line = prevword + pos
         else:
             prevline = line
         file.write(line)                            #saves line to file
+        duplikey = addword(line,dictionary,duplikey)
 
-dictionary={}
-duplikey=0
-with open(filename+".txt","r") as file:
-    f= file.read()
-    f= f.split("\n")
-    for line in f:
-        wordend= line.find(" ")
-        word = line[:wordend]
-        pos = line[wordend+1:].replace(".\n","")
-        duplikey = addword(word,pos,dictionary,duplikey)
 
-with open(fileirregv+".txt","r+") as file:          #not done - verbs -
+
+with open(fileirregv+".txt","r") as file:          #not done - verbs -
     f= file.read()
     f= re.sub(" /.+/|\n	\n","",f)
     f= f.split("\n")
+with open(fileirregv+".txt","w") as file:
+    x= 0
     for line in f:
-        file.write(line)
+        if line!="":
+            file.write(line+" ")
+            x +=1
+            if x == 3:
+                file.write(":")                         #verb end eg ":read read reading :"
+                x = 0
 
+with open(fileirregv+".txt","r") as file:
+    f= file.read()
+    f= f.split(":")
+    for line in f:
+        wordend= line.find(" ")
+        word = line[:wordend]
+        if word in dictionary:
+            key= word
+            data= dictionary[key]
+            if type(data[0]) == int:
+                for i in data:
+                    if "v." in dictionary[i]:
+                        data= dictionary[data[i]]
+                        key= i
+            vforms= line.split(" ")                     #THIS DOES NOT WORK
+            for v in vforms:
+	            print("and",v)
+            data[1] = True                              #True symbolises that the word is irregular (also why is there an error)
+            data.append(vforms)
+            dictionary[key]= data
+            
+            
+
+print(dictionary)
 
 with open(fileirregn+".txt","r+") as file:            #not done - nouns - 
     pass
