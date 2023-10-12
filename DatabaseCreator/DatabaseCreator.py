@@ -2,17 +2,21 @@ filename="Oxford5000"
 fileirregv="irregverbs"
 fileirregn="irregnouns"
 databasename = "lengdatabase"
+filedict = ""
 fileirregv="testv"                 #test values
 filename="test"
 fileirregn="testn"
 databasename = ""
 
 import re                                           #imports regex
+import json
 
+dictionary={}
+duplikey=0
 def addword(line,dictionary,duplikey):
     wordend= line.find(" ")
-    word= line[:wordend]
-    pos= [line[wordend+1:].replace(".\n","")]
+    word= line[:wordend].replace("\n","")
+    pos= line[wordend+1:].replace(".\n","")
     posdata= [pos,False]
     if word not in dictionary:
         dictionary[word] = posdata
@@ -33,8 +37,6 @@ with open(filename+".txt","r") as file:             #opens file
     f= file.read()
     f= re.split("1|2",f)                            #copy of file => list of lines
 
-dictionary={}
-duplikey=0
 with open(filename+".txt","w") as file:             
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
@@ -58,9 +60,7 @@ with open(filename+".txt","w") as file:
         file.write(line)                            #saves line to file
         duplikey = addword(line,dictionary,duplikey)
 
-
-
-with open(fileirregv+".txt","r") as file:          #not done - verbs -
+with open(fileirregv+".txt","r") as file:          #verbs
     f= file.read()
     f= re.sub(" /.+/|\n	\n","",f)
     f= f.split("\n")
@@ -88,21 +88,44 @@ with open(fileirregv+".txt","r") as file:
                     if "v." in dictionary[i]:
                         data= dictionary[data[i]]
                         key= i
-            vforms= line.split(" ")                     #THIS DOES NOT WORK
-            for v in vforms:
-	            print("and",v)
-            data[1] = True                              #True symbolises that the word is irregular (also why is there an error)
+            vforms= line.split(" ")                  
+            while "" in vforms:
+               vforms.remove("")
+            for i in range(len(vforms)):
+                form = vforms[i]
+                slash = form.find("/")
+                if slash != -1:
+                    vforms[i] = [form[:slash], form[slash+1:]]
+            data[1] = True                              #True symbolises that the word is irregular 
             data.append(vforms)
             dictionary[key]= data
             
-            
+with open(fileirregn+".txt","r") as file:            #nouns
+    f= file.read()
+    f= f.split("\n")
+    for line in f:
+        wordend= line.find(" 	")
+        word = line[:wordend]
+        if word in dictionary:
+            key= word
+            data= dictionary[key]
+            if type(data[0]) == int:
+                for i in data:
+                    if "n." in dictionary[i]:
+                        data= dictionary[data[i]]
+                        key= i
+            plural= line[wordend+2:]
+            slash = plural.find(" or ")
+            if slash != -1:
+                plural= [plural[:slash], plural[slash+4:]]
+            data[1] = True                              #True symbolises that the word is irregular 
+            data.append(plural)
+            dictionary[key]= data
 
+with open(filedict+".json", "w") as file:              #have not tested section
+    json.dump(dictionary, file)
 print(dictionary)
 
-with open(fileirregn+".txt","r+") as file:            #not done - nouns - 
-    pass
-
-#!! THIS SHOULD be a hash table NOT A DATABASE 
 
 '''
 import mysql.connector
