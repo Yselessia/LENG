@@ -1,12 +1,13 @@
-filename="Oxford5000"
-fileirregv="irregverbs"
-fileirregn="irregnouns"
-databasename = "lengdatabase"
-filedict = ""
-fileirregv="testv"                 #test values
-filename="test"
-fileirregn="testn"
-databasename = ""
+FILENAME="Oxford5000"
+FILEIRREGV="irregverbs"
+FILEIRREGN="irregnouns"
+DATABASENAME = "lengdatabase"
+FILEDICT = "dictionary"         #SAVE TO APPROPRIATE FOLDER!!
+FILEIRREGV=""                 #test values
+FILENAME=""
+FILEIRREGN=""
+DATABASENAME = ""
+FILEDICT = ""
 
 import re                                           #imports regex
 import json
@@ -33,11 +34,11 @@ def addword(line,dictionary,duplikey):
         duplikey +=1
     return duplikey
 
-with open(filename+".txt","r") as file:             #opens file
+with open(FILENAME+".txt","r") as file:             #opens file
     f= file.read()
     f= re.split("1|2",f)                            #copy of file => list of lines
 
-with open(filename+".txt","w") as file:             
+with open(FILENAME+".txt","w") as file:             
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
         x = line.count(",")
@@ -60,11 +61,11 @@ with open(filename+".txt","w") as file:
         file.write(line)                            #saves line to file
         duplikey = addword(line,dictionary,duplikey)
 
-with open(fileirregv+".txt","r") as file:          #verbs
+with open(FILEIRREGV+".txt","r") as file:          #verbs
     f= file.read()
     f= re.sub(" /.+/|\n	\n","",f)
     f= f.split("\n")
-with open(fileirregv+".txt","w") as file:
+with open(FILEIRREGV+".txt","w") as file:
     x= 0
     for line in f:
         if line!="":
@@ -74,7 +75,7 @@ with open(fileirregv+".txt","w") as file:
                 file.write(":")                         #verb end eg ":read read reading :"
                 x = 0
 
-with open(fileirregv+".txt","r") as file:
+with open(FILEIRREGV+".txt","r") as file:
     f= file.read()
     f= f.split(":")
     for line in f:
@@ -100,7 +101,7 @@ with open(fileirregv+".txt","r") as file:
             data.append(vforms)
             dictionary[key]= data
             
-with open(fileirregn+".txt","r") as file:            #nouns
+with open(FILEIRREGN+".txt","r") as file:            #nouns
     f= file.read()
     f= f.split("\n")
     for line in f:
@@ -122,7 +123,7 @@ with open(fileirregn+".txt","r") as file:            #nouns
             data.append(plural)
             dictionary[key]= data
 
-with open(filedict+".json", "w") as file:              #have not tested section
+with open(FILEDICT+".json", "w") as file:              #have not tested section
     json.dump(dictionary, file)
 print(dictionary)
 
@@ -132,33 +133,22 @@ import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  password="SQL5964@pain"
+  password="SQL5964@pain" #is this correct?????
 )
 mycursor = mydb.cursor()
 
-mycursor.execute("CREATE DATABASE" + databasename)
-mycursor.execute(#CREATE TABLE tblWords (
-                 lemma VARCHAR(20) NOT NULL, 
-                 partOfSpeech ENUM('noun','pronoun','verb','adverb','adjective','preposition','conjuction','interjection','article') NOT NULL,
-                 irregularNoun BOOLEAN,
-                 correctLemma VARCHAR(20),
-                 PRIMARY KEY (lemma)
+mycursor.execute("CREATE DATABASE" + DATABASENAME)
+mycursor.execute(#CREATE TABLE tblStudents (
                  );
-                 CREATE TABLE tblIrregPlurals (
-                 irregID NOT NULL AUTO_INCREMENT, 
-                 singular VARCHAR(20) NOT NULL, 
-                 plural VARCHAR(20) NOT NULL, 
-                 PRIMARY KEY (irregID)
-                 FOREIGN KEY (singular) REFERENCES tblWords(lemma)
-                 FOREIGN KEY (plural) REFERENCES tblWords(lemma)
+                 CREATE TABLE tblExercises (
+                 );
+                CREATE TABLE tblSentences (
                  );#)
-
-
 
 #this section for testing
 mycursor.execute("SHOW TABLES")
 for x in mycursor:
   print(x) 
-mycursor.execute("DROP DATABASE databasename;")
+mycursor.execute("DROP DATABASE DATABASENAME;")
 #end testing section
 '''
