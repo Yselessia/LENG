@@ -6,12 +6,12 @@ FILEDICT = "dictionary"         #SAVE TO APPROPRIATE FOLDER!!
 FILEIRREGV=""                 #test values
 FILENAME=""
 FILEIRREGN=""
-DATABASENAME = ""
-FILEDICT = ""
+DATABASENAME = "testdb"
+FILEDICT = "testdictionary"
 
 import re                                           #imports regex
 import json
-
+'''
 dictionary={}
 duplikey=0
 def addword(line,dictionary,duplikey):
@@ -122,33 +122,34 @@ with open(FILEIRREGN+".txt","r") as file:            #nouns
             data[1] = True                              #True symbolises that the word is irregular 
             data.append(plural)
             dictionary[key]= data
-
-with open(FILEDICT+".json", "w") as file:              #have not tested section
+'''
+#testing
+dictionary = {"haha":2, "test":[1,2,3], 10:"Hello world"}
+#end testing
+with open(FILEDICT+".json", "w") as file:      
     json.dump(dictionary, file)
-print(dictionary)
-
+    print("success")
 
 '''
-import mysql.connector
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password="SQL5964@pain" #is this correct?????
-)
-mycursor = mydb.cursor()
+#changing this section to be compatible with new sql database server
 
-mycursor.execute("CREATE DATABASE" + DATABASENAME)
-mycursor.execute(#CREATE TABLE tblStudents (
-                 );
-                 CREATE TABLE tblExercises (
-                 );
-                CREATE TABLE tblSentences (
-                 );#)
+import sqlite3
+connection = sqlite3.connect(DATABASENAME)
+cursor = connection.cursor()
+
+
+cursor.execute("CREATE DATABASE" + DATABASENAME)
+cursor.execute("""CREATE TABLE tblStudents (
+                 );""")
+cursor.execute("""CREATE TABLE tblExercises (
+                 );""")
+cursor.execute("""CREATE TABLE tblSentences (
+                 );""")
 
 #this section for testing
-mycursor.execute("SHOW TABLES")
-for x in mycursor:
+cursor.execute("SHOW TABLES")
+for x in cursor:
   print(x) 
-mycursor.execute("DROP DATABASE DATABASENAME;")
+cursor.execute("DROP DATABASE DATABASENAME;")
 #end testing section
 '''

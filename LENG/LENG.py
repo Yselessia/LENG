@@ -1,23 +1,24 @@
-FILEDICT = "dictionary"             #LOAD FROM APPROPRIATE FOLDER!!
-
+FILEDICT = "dictionary"
+DATABASENAME = "lengdatabase"
+DATABASENAME = "testdb"
+FILEDICT = "testdictionary"
 import json
-import mysql.connector
-
+import sqlite3
+import sys
+'''
 try:
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="SQL5964@pain"     #is this correct???
-        database="lengdatabase"
-    )
-
-    mycursor = mydb.cursor()
+    connection = sqlite3.connect('file:{DATABASENAME}.db?mode=rw', uri=True)
+    cursor = connection.cursor()
 except:
-    print("Error: Unable to access student database")
-
+    print("Error: Unable to locate student database")
+    print("Continuing with blank database")
+    connection = sqlite3.connect(DATABASENAME+"_1.db")
+'''
 try:
-    with open(FILEDICT,".json","r+") as file:
+    with open(FILEDICT,".json","r+") as file:   #this does not work
         dictionary = json.load(file)
-        pass
+        print("success")
 except:
     print("Error: No dictionary. Check directory for", FILEDICT+".json")
+    print("Closing program")
+    sys.exit()
