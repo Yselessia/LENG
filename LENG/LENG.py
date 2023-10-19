@@ -2,10 +2,11 @@ FILEDICT = "dictionary"
 DATABASENAME = "lengdatabase"
 DATABASENAME = "testdb"
 FILEDICT = "testdictionary"
+import sys
 import json
 import sqlite3
-import sys
-'''
+
+
 try:
     connection = sqlite3.connect('file:{DATABASENAME}.db?mode=rw', uri=True)
     cursor = connection.cursor()
@@ -15,10 +16,11 @@ except:
     connection = sqlite3.connect(DATABASENAME+"_1.db")
 '''
 try:
-    with open(FILEDICT,".json","r+") as file:   #this does not work
+    with open(FILEDICT+".json","r+") as file:
         dictionary = json.load(file)
-        print("success")
+        pass
 except:
     print("Error: No dictionary. Check directory for", FILEDICT+".json")
     print("Closing program")
     sys.exit()
+'''

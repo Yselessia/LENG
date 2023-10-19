@@ -2,15 +2,16 @@ FILENAME="Oxford5000"
 FILEIRREGV="irregverbs"
 FILEIRREGN="irregnouns"
 DATABASENAME = "lengdatabase"
-FILEDICT = "dictionary"         #SAVE TO APPROPRIATE FOLDER!!
+FILEDICT = "dictionary"
 FILEIRREGV=""                 #test values
 FILENAME=""
 FILEIRREGN=""
 DATABASENAME = "testdb"
-FILEDICT = "testdictionary"
+FILEDICT = ""
 
 import re                                           #imports regex
 import json
+import sqlite3
 '''
 dictionary={}
 duplikey=0
@@ -122,10 +123,7 @@ with open(FILEIRREGN+".txt","r") as file:            #nouns
             data[1] = True                              #True symbolises that the word is irregular 
             data.append(plural)
             dictionary[key]= data
-'''
-#testing
-dictionary = {"haha":2, "test":[1,2,3], 10:"Hello world"}
-#end testing
+
 with open(FILEDICT+".json", "w") as file:      
     json.dump(dictionary, file)
     print("success")
@@ -133,23 +131,68 @@ with open(FILEDICT+".json", "w") as file:
 '''
 #changing this section to be compatible with new sql database server
 
-import sqlite3
+
 connection = sqlite3.connect(DATABASENAME)
 cursor = connection.cursor()
 
 
-cursor.execute("CREATE DATABASE" + DATABASENAME)
+cursor.execute("CREATE DATABASE {DATABASENAME}.db")
+cursor.execute("PRAGMA foreign_keys = ON;")
 cursor.execute("""CREATE TABLE tblStudents (
-                 );""")
+               StudentID INTEGER PRIMARY KEY AUTOINCREMENT,
+               FirstName VARCHAR(30) NOT NULL,
+               LastName VARCHAR(30)
+                );""")
+cursor.execute("""CREATE TABLE tblCriteria (
+               CriteriaID INTEGER PRIMARY KEY AUTOINCREMENT,
+               TenseIs CHAR CHECK(TenseIs IN ('PrS','PrC','PaS','PaC','FS')),
+               HasPreposition BOOLEAN DEFAULT 0,
+               HasConjunction BOOLEAN DEFAULT 0,
+               HasAdjective CHAR CHECK(HasAdj IN ('Pos','Sup','Com'))
+                );""")                          #TenseIs allows the 5 tenses taught by esol entry 3
 cursor.execute("""CREATE TABLE tblExercises (
-                 );""")
+               ExerciseID INTEGER PRIMARY KEY AUTOINCREMENT,
+               Description TEXT,
+               Date DATE DEFAULT CURRENT_DATE,
+               CriteriaID INTEGER 
+               FORIEGN KEY (CriteriaID)
+                   REFERENCES tblCriteria(CriteriaID)
+               );""")
 cursor.execute("""CREATE TABLE tblSentences (
+               SentenceID INTEGER PRIMARY KEY AUTOINCREMENT,
+               Sentence VARCHAR(100) NOT NULL, 
+               CorrectedSentence VARCHAR(100), 
+               StudentID INTEGER NOT NULL
+               ExerciseID INTEGER NOT NULL
+               FOREIGN KEY (StudentID)
+                   REFERENCES tblStudents(StudentID),
+               FOREIGN KEY (ExerciseID)
+                   REFERENCES tblExercises(ExerciseID)
+                 );""")
+cursor.execute("""CREATE TABLE tblErrors (
+               StudentID INTEGER NOT NULL,
+               ExerciseID INTEGER NOT NULL,
+               Spelling INTEGER DEFAULT 0,
+               SVOOrder INTEGER DEFAULT 0,
+               SVAgreement INTEGER DEFAULT 0,
+               Criteria INTEGER DEFAULT 0,
+               Articles INTEGER DEFAULT 0,
+               Prepositions INTEGER DEFAULT 0,
+               Conjunctions INTEGER DEFAULT 0,
+               PosAdjectives INTEGER DEFAULT 0,
+               Adjectives INTEGER DEFAULT 0,
+               PRIMARY KEY (StudentID, ExerciseID)
+               FOREIGN KEY (StudentID)
+                   REFERENCES tblStudents(StudentID),
+               FOREIGN KEY (ExerciseID)
+                   REFERENCES tblExercises(ExerciseID)
                  );""")
 
 #this section for testing
 cursor.execute("SHOW TABLES")
 for x in cursor:
   print(x) 
-cursor.execute("DROP DATABASE DATABASENAME;")
+cursor.execute("DROP DATABASE {DATABASENAME}.db;")
 #end testing section
-'''
+connection.commit()
+connection.close()
