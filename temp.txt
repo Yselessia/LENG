@@ -1,0 +1,1 @@
+lean leant/leaned leant/leaned :put put put :quit quit quit :read read read :

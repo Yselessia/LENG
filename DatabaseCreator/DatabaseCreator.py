@@ -2,17 +2,13 @@ FILENAME="Oxford5000"
 FILEIRREGV="irregverbs"
 FILEIRREGN="irregnouns"
 DATABASENAME = "lengdatabase"
-FILEDICT = "dictionary"
-FILEIRREGV=""                 #test values
-FILENAME=""
-FILEIRREGN=""
-DATABASENAME = "testdb"
-FILEDICT = ""
+DICTFILE = "dictionary"
+WRITABLEFILE = "temp"
 
 import re                                           #imports regex
 import json
 import sqlite3
-'''
+
 dictionary={}
 duplikey=0
 def addword(line,dictionary,duplikey):
@@ -39,7 +35,7 @@ with open(FILENAME+".txt","r") as file:             #opens file
     f= file.read()
     f= re.split("1|2",f)                            #copy of file => list of lines
 
-with open(FILENAME+".txt","w") as file:             
+with open(WRITABLEFILE+".txt","w") as file:             
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
         x = line.count(",")
@@ -66,7 +62,7 @@ with open(FILEIRREGV+".txt","r") as file:          #verbs
     f= file.read()
     f= re.sub(" /.+/|\n	\n","",f)
     f= f.split("\n")
-with open(FILEIRREGV+".txt","w") as file:
+with open(WRITABLEFILE+".txt","w") as file:
     x= 0
     for line in f:
         if line!="":
@@ -124,75 +120,80 @@ with open(FILEIRREGN+".txt","r") as file:            #nouns
             data.append(plural)
             dictionary[key]= data
 
-with open(FILEDICT+".json", "w") as file:      
+with open(DICTFILE+".json", "w") as file:      
     json.dump(dictionary, file)
-    print("success")
 
-'''
-#changing this section to be compatible with new sql database server
+try:
+    connection = sqlite3.connect(DATABASENAME+".db")
+    cursor = connection.cursor()
 
+    cursor.execute("PRAGMA foreign_keys = ON;")
 
-connection = sqlite3.connect(DATABASENAME)
-cursor = connection.cursor()
-
-
-cursor.execute("CREATE DATABASE {DATABASENAME}.db")
-cursor.execute("PRAGMA foreign_keys = ON;")
-cursor.execute("""CREATE TABLE tblStudents (
-               StudentID INTEGER PRIMARY KEY AUTOINCREMENT,
-               FirstName VARCHAR(30) NOT NULL,
-               LastName VARCHAR(30)
+    cursor.execute("""CREATE TABLE tblStudents (
+                StudentID INTEGER PRIMARY KEY AUTOINCREMENT,
+                FirstName VARCHAR(30) NOT NULL,
+                LastName VARCHAR(30)
                 );""")
-cursor.execute("""CREATE TABLE tblCriteria (
-               CriteriaID INTEGER PRIMARY KEY AUTOINCREMENT,
-               TenseIs CHAR CHECK(TenseIs IN ('PrS','PrC','PaS','PaC','FS')),
-               HasPreposition BOOLEAN DEFAULT 0,
-               HasConjunction BOOLEAN DEFAULT 0,
-               HasAdjective CHAR CHECK(HasAdj IN ('Pos','Sup','Com'))
+    cursor.execute("""CREATE TABLE tblCriteria (
+                CriteriaID INTEGER PRIMARY KEY AUTOINCREMENT,
+                TenseIs CHAR CHECK(TenseIs IN ('PrS','PrC','PaS','PaC','FS')),
+                HasPreposition BOOLEAN DEFAULT 0,
+                HasConjunction BOOLEAN DEFAULT 0,
+                HasAdjective CHAR CHECK(HasAdjective IN ('Pos','Sup','Com'))
                 );""")                          #TenseIs allows the 5 tenses taught by esol entry 3
-cursor.execute("""CREATE TABLE tblExercises (
-               ExerciseID INTEGER PRIMARY KEY AUTOINCREMENT,
-               Description TEXT,
-               Date DATE DEFAULT CURRENT_DATE,
-               CriteriaID INTEGER 
-               FORIEGN KEY (CriteriaID)
-                   REFERENCES tblCriteria(CriteriaID)
-               );""")
-cursor.execute("""CREATE TABLE tblSentences (
-               SentenceID INTEGER PRIMARY KEY AUTOINCREMENT,
-               Sentence VARCHAR(100) NOT NULL, 
-               CorrectedSentence VARCHAR(100), 
-               StudentID INTEGER NOT NULL
-               ExerciseID INTEGER NOT NULL
-               FOREIGN KEY (StudentID)
-                   REFERENCES tblStudents(StudentID),
-               FOREIGN KEY (ExerciseID)
-                   REFERENCES tblExercises(ExerciseID)
-                 );""")
-cursor.execute("""CREATE TABLE tblErrors (
-               StudentID INTEGER NOT NULL,
-               ExerciseID INTEGER NOT NULL,
-               Spelling INTEGER DEFAULT 0,
-               SVOOrder INTEGER DEFAULT 0,
-               SVAgreement INTEGER DEFAULT 0,
-               Criteria INTEGER DEFAULT 0,
-               Articles INTEGER DEFAULT 0,
-               Prepositions INTEGER DEFAULT 0,
-               Conjunctions INTEGER DEFAULT 0,
-               PosAdjectives INTEGER DEFAULT 0,
-               Adjectives INTEGER DEFAULT 0,
-               PRIMARY KEY (StudentID, ExerciseID)
-               FOREIGN KEY (StudentID)
-                   REFERENCES tblStudents(StudentID),
-               FOREIGN KEY (ExerciseID)
-                   REFERENCES tblExercises(ExerciseID)
-                 );""")
-
-#this section for testing
-cursor.execute("SHOW TABLES")
-for x in cursor:
-  print(x) 
-cursor.execute("DROP DATABASE {DATABASENAME}.db;")
-#end testing section
-connection.commit()
-connection.close()
+    cursor.execute("""CREATE TABLE tblExercises (
+                ExerciseID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Description TEXT,
+                Date DATE DEFAULT CURRENT_DATE,
+                CriteriaID INTEGER, 
+                FOREIGN KEY (CriteriaID) 
+                    REFERENCES tblCriteria(CriteriaID)
+                );""")
+    cursor.execute("""CREATE TABLE tblSentences (
+                SentenceID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Sentence VARCHAR(100) NOT NULL, 
+                CorrectedSentence VARCHAR(100), 
+                StudentID INTEGER NOT NULL,
+                ExerciseID INTEGER NOT NULL,
+                FOREIGN KEY (StudentID)
+                    REFERENCES tblStudents(StudentID),
+                FOREIGN KEY (ExerciseID)
+                    REFERENCES tblExercises(ExerciseID)
+                );""")
+    cursor.execute("""CREATE TABLE tblErrors (
+                StudentID INTEGER NOT NULL,
+                ExerciseID INTEGER NOT NULL,
+                Spelling INTEGER DEFAULT 0,
+                SVOOrder INTEGER DEFAULT 0,
+                SVAgreement INTEGER DEFAULT 0,
+                Criteria INTEGER DEFAULT 0,
+                Articles INTEGER DEFAULT 0,
+                Prepositions INTEGER DEFAULT 0,
+                Conjunctions INTEGER DEFAULT 0,
+                PosAdjectives INTEGER DEFAULT 0,
+                Adjectives INTEGER DEFAULT 0,
+                Total INTEGER,
+                PRIMARY KEY (StudentID, ExerciseID),
+                FOREIGN KEY (StudentID)
+                    REFERENCES tblStudents(StudentID),
+                FOREIGN KEY (ExerciseID)
+                    REFERENCES tblExercises(ExerciseID)
+                );""")
+    cursor.execute("""CREATE TRIGGER sum_errors AFTER INSERT ON tblErrors FOR EACH ROW
+                   BEGIN
+                       UPDATE tblErrors 
+                       SET Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
+                       WHERE StudentID = NEW.StudentID AND ExerciseID = NEW.ExerciseID;
+                   END;""")
+    cursor.execute("""CREATE TRIGGER sum_errors_update AFTER UPDATE ON tblErrors FOR EACH ROW
+                   BEGIN
+                       UPDATE tblErrors 
+                       SET Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
+                       WHERE StudentID = NEW.StudentID AND ExerciseID = NEW.ExerciseID;
+                   END;""")
+except sqlite3.Error as error:
+    print("Failed to execute the above queries", error)
+finally:
+    if connection:
+        connection.commit()
+        connection.close()
