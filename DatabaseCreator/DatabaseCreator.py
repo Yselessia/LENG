@@ -179,13 +179,12 @@ try:
                 FOREIGN KEY (ExerciseID)
                     REFERENCES tblExercises(ExerciseID)
                 );""")
-    cursor.execute("""CREATE TRIGGER sum_errors AFTER INSERT ON tblErrors FOR EACH ROW
+    cursor.execute("""CREATE TRIGGER sum_errors BEFORE INSERT ON tblErrors FOR EACH ROW
                    BEGIN
-                       UPDATE tblErrors 
-                       SET Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
-                       WHERE StudentID = NEW.StudentID AND ExerciseID = NEW.ExerciseID;
+                       SET NEW.Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
                    END;""")
-    cursor.execute("""CREATE TRIGGER sum_errors_update AFTER UPDATE ON tblErrors FOR EACH ROW
+    cursor.execute("""CREATE TRIGGER sum_errors_update BEFORE UPDATE ON tblErrors FOR EACH ROW
+                   WHEN NEW.Total = OLD.Total
                    BEGIN
                        UPDATE tblErrors 
                        SET Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
