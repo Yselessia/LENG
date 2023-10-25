@@ -5,6 +5,10 @@ DATABASENAME = "lengdatabase"
 DICTFILE = "dictionary"
 WRITABLEFILE = "temp"
 
+#test values    <<<<<<<<<<<
+DATABASENAME = "testdb"
+DICTFILE = "testdictionary"
+
 import re                                           #imports regex
 import json
 import sqlite3
@@ -124,23 +128,28 @@ with open(DICTFILE+".json", "w") as file:
     json.dump(dictionary, file)
 
 try:
+    statement = 0
     connection = sqlite3.connect(DATABASENAME+".db")
     cursor = connection.cursor()
-
+    statement =1
     cursor.execute("PRAGMA foreign_keys = ON;")
-
+    statement =2
     cursor.execute("""CREATE TABLE tblStudents (
                 StudentID INTEGER PRIMARY KEY AUTOINCREMENT,
                 FirstName VARCHAR(30) NOT NULL,
-                LastName VARCHAR(30)
+                LastName VARCHAR(30),
+                ContactInfo TEXT,
+                Notes TEXT
                 );""")
+    statement =3
     cursor.execute("""CREATE TABLE tblCriteria (
                 CriteriaID INTEGER PRIMARY KEY AUTOINCREMENT,
-                TenseIs CHAR CHECK(TenseIs IN ('PrS','PrC','PaS','PaC','FS')),
+                TenseIs CHAR DEFAULT '0' CHECK(TenseIs IN ('PrS','PrC','PaS','PaC','FS')),
                 HasPreposition BOOLEAN DEFAULT 0,
                 HasConjunction BOOLEAN DEFAULT 0,
-                HasAdjective CHAR CHECK(HasAdjective IN ('Pos','Sup','Com'))
+                HasAdjective CHAR DEFAULT '0' CHECK(HasAdjective IN ('Pos','Sup','Com'))
                 );""")                          #TenseIs allows the 5 tenses taught by esol entry 3
+    statement =4
     cursor.execute("""CREATE TABLE tblExercises (
                 ExerciseID INTEGER PRIMARY KEY AUTOINCREMENT,
                 Description TEXT,
@@ -148,7 +157,9 @@ try:
                 CriteriaID INTEGER, 
                 FOREIGN KEY (CriteriaID) 
                     REFERENCES tblCriteria(CriteriaID)
+                    ON DELETE SET NULL
                 );""")
+    statement =5
     cursor.execute("""CREATE TABLE tblSentences (
                 SentenceID INTEGER PRIMARY KEY AUTOINCREMENT,
                 Sentence VARCHAR(100) NOT NULL, 
@@ -156,10 +167,13 @@ try:
                 StudentID INTEGER NOT NULL,
                 ExerciseID INTEGER NOT NULL,
                 FOREIGN KEY (StudentID)
-                    REFERENCES tblStudents(StudentID),
+                    REFERENCES tblStudents(StudentID)
+                    ON DELETE CASCADE,
                 FOREIGN KEY (ExerciseID)
                     REFERENCES tblExercises(ExerciseID)
+                    ON DELETE CASCADE
                 );""")
+    statement =6
     cursor.execute("""CREATE TABLE tblErrors (
                 StudentID INTEGER NOT NULL,
                 ExerciseID INTEGER NOT NULL,
@@ -175,23 +189,27 @@ try:
                 Total INTEGER,
                 PRIMARY KEY (StudentID, ExerciseID),
                 FOREIGN KEY (StudentID)
-                    REFERENCES tblStudents(StudentID),
+                    REFERENCES tblStudents(StudentID)
+                    ON DELETE CASCADE,
                 FOREIGN KEY (ExerciseID)
                     REFERENCES tblExercises(ExerciseID)
+                    ON DELETE CASCADE
                 );""")
+    statement =7
     cursor.execute("""CREATE TRIGGER sum_errors BEFORE INSERT ON tblErrors FOR EACH ROW
                    BEGIN
-                       SET NEW.Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
+                       SET NEW.Total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
                    END;""")
+    statement =8
     cursor.execute("""CREATE TRIGGER sum_errors_update BEFORE UPDATE ON tblErrors FOR EACH ROW
                    WHEN NEW.Total = OLD.Total
                    BEGIN
                        UPDATE tblErrors 
-                       SET Total = Total + NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
+                       SET Total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives
                        WHERE StudentID = NEW.StudentID AND ExerciseID = NEW.ExerciseID;
                    END;""")
 except sqlite3.Error as error:
-    print("Failed to execute the above queries", error)
+    print("Failed to execute the above queries", error, "crashed on statement", statement)
 finally:
     if connection:
         connection.commit()
