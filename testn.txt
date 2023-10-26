@@ -1,6 +1,0 @@
-synopsis 	synopses
-tableau 	tableaux or tableaus
-thesis 	theses
-thief 	thieves
-tooth 	teeth
-trout 	trout or trouts

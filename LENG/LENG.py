@@ -8,6 +8,7 @@ BACKICON = "backarrow"
 
 import sys
 import json
+import re                                      #imports regex
 import sqlite3
 import datetime
 import customtkinter as ctk                    #imports the ctk module
@@ -36,7 +37,7 @@ def error(errMessg="Unknown Error."):
     winErr = Tk()
     winErr.overrideredirect(True)
     winErr.geometry('400x200+400+200')
-    messg = Label(master=winErr, text=errMessg+"\nClosing program", font=('Arial',16), height=25, width=120)
+    messg = Label(master=winErr, text=errMessg+"\nClosing program", font=('Arial',14), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master=winErr, text="close", command=lambda: (winErr.destroy(), sys.exit()) , fg_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
@@ -46,11 +47,10 @@ def dialogue(newMessg="Dialogue error."):
     winMessg.grab_set()
     winMessg.overrideredirect(True)
     winMessg.geometry('400x200+400+200')
-    messg = Label(master=winMessg, text=newMessg, font=('Arial',16), height=25, width=120)
+    messg = Label(master=winMessg, text=newMessg, font=('Arial',14), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master=winMessg, text="close dialogue", command=lambda: (winMessg.destroy()) , fg_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
-    winMessg.mainloop()
 def confirmChange(changeMessg):
     global confirm
     confirm = False
@@ -60,11 +60,10 @@ def confirmChange(changeMessg):
     winCheck.geometry('400x200+400+200')
     messg = Label(master=winCheck, text=changeMessg, font=('Arial',16), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
-    cancel = ctk.CTkButton(master=winCheck, text="cancel", command=lambda: (winCheck.destroy()) , fg_color='black', corner_radius=10)
-    confirm = ctk.CTkButton(master=winCheck, text="confirm", command=lambda: (commit, winCheck.destroy()) , fg_color='black', corner_radius=10)
-    cancel.place(relx=0.35, rely=0.9, anchor=S)
-    confirm.place(relx=0.65, rely=0.9, anchor=S)
-    winCheck.mainloop()
+    cancelBtn = ctk.CTkButton(master=winCheck, text="cancel", command=lambda: (winCheck.destroy()), width=90, fg_color='black', corner_radius=10)
+    confirmBtn = ctk.CTkButton(master=winCheck, text="confirm", command=commit(), width=90, fg_color='black', corner_radius=10)
+    cancelBtn.place(relx=0.35, rely=0.9, anchor=S)
+    confirmBtn.place(relx=0.65, rely=0.9, anchor=S)
 def commit():
     global confirm
     confirm = True
@@ -73,6 +72,7 @@ def backCommand():
     if back[0] == True:
         back[1]()
 def makeCommitBtn(frame, commit, messg="COMMIT"):
+    global commitBtn
     commitBtn = Button(frame, text=messg, command=lambda: commit(), font=('Arial',12), height=3, width=8, borderwidth=2)
     commitBtn.place(relx=0.5, rely=0.9, anchor=S)
 def setIcon(file):
@@ -81,8 +81,11 @@ def setIcon(file):
     var = icon.resize(size)
     var = ImageTk.PhotoImage(var)
     return var
-def labelBox(label, ypos, frame):
-    Label(frame, text=label.upper(), bg=bgCol2, fg='white', font=('Arial',12)).place(relx=0.15,rely=ypos)
+def labelBox(label, ypos, frame, returnID=False):
+    labelID = Label(frame, text=label.upper(), bg=bgCol2, fg='white', font=('Arial',12))
+    labelID.place(relx=0.15,rely=ypos)
+    if returnID==True:
+        return labelID
 def dateFormatted(string):
     try: 
         datetime.datetime.strptime(string, '%Y-%m-%d') 
@@ -93,7 +96,7 @@ def dateFormatted(string):
 def clearFrame(frame):
    for widgets in frame.winfo_children():
       widgets.destroy()
-def newScreen(StackPrev, pageTitle, img, rightState="normal", scrollState=False, leftState="normal", centreState="hidden", mainState="hidden", callTrue=True):
+def newScreen(StackPrev, pageTitle, img, scrollState=False, rightState="normal", leftState="normal", centreState="hidden", mainState="hidden", callTrue=True):
     global title, back
     back[0] = callTrue
     back[1] = StackPrev
@@ -107,8 +110,13 @@ def newScreen(StackPrev, pageTitle, img, rightState="normal", scrollState=False,
     canvas.itemconfig(leftWin, state=leftState)
     canvas.itemconfig(rightWin, state=rightState)
     if scrollState == True:
+        pageTitle = pageTitle.replace(" ","\n")
         xVal = 288
     else:
+        try:
+            scrllID.destroy()
+        except:
+            pass
         xVal=588
     try:
         canvas.delete(title)
@@ -155,11 +163,12 @@ def createHome():
                                            corner_radius=10, height=55, width=300)
     exViewBtn.place(relx=0.5, rely=0.83, anchor=CENTER)
 def home():
-    newScreen(None, "NURTURING GRAMMAR MAIN MENU", icon1, "hidden", False, "hidden", "hidden", "normal", False)
+    newScreen(None, "NURTURING GRAMMAR MAIN MENU", icon1, False, "hidden", "hidden", "hidden", "normal", False)
 
 def exCreateCommit():
     newEx = (descripEntry.get(1.0,END), exDateEntry.get())
-    if '' in newEx:
+    x = newEx[0].replace('\n','').replace(' ','')
+    if '' in newEx or x=='':
         dialogue("Please fill in all necessary fields marked *")
     elif dateFormatted(newEx[1]) == False:
         dialogue("Cannot save exercise.\nCheck date is valid YYYY-MM-DD")
@@ -170,9 +179,9 @@ def exCreateCommit():
             criteria = requireEntry.get()
             exId = cursor.lastrowid
             if criteria != '':
-                isTrue = 1
+                print("you are here")
                 insertQuery = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
-                cursor.execute(insertQuery, (isTrue,))
+                cursor.execute(insertQuery, (critVal,))
                 critId = cursor.lastrowid
                 updateQuery = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {exId}"
                 cursor.execute(updateQuery)
@@ -181,7 +190,7 @@ def exCreateCommit():
         except:
             dialogue("Error saving exercise.\n Please try again.")
 def exCreate():
-    global exDateEntry, requireEntry, descripEntry
+    global exDateEntry, requireEntry, valueEntry, valueLabel, descripLabel, descripEntry
     newScreen(home,"CREATE EXERCISE", icon2)
     makeCommitBtn(leftFrame, exCreateCommit)
     labelBox("EXERCISE ID", 0.1, leftFrame)
@@ -194,46 +203,93 @@ def exCreate():
     labelBox("REQUIREMENT",0.11, rightFrame)
     requireEntry = ctk.CTkEntry(rightFrame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14), state='readonly')
     requireEntry.place(relx=0.25, rely=0.17)
-    addRequire = Button(rightFrame, text="ADD", command=lambda: optionPickerWin(), font=('Arial',10), width=5, borderwidth=2)
+    addRequire = Button(rightFrame, text="ADD", command=lambda: critChoiceWin(), font=('Arial',10), width=5, borderwidth=2)
     addRequire.place(relx=0.8, rely=0.17)
-    labelBox("DESCRIPTION*",0.31, rightFrame)
+
+    valueLabel = labelBox("REQUIREMENT TYPE",0.29, rightFrame, True)
+    valueLabel.place_forget()
+    valueEntry = ctk.CTkEntry(rightFrame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14))
+    descripLabel = labelBox("DESCRIPTION*",0.31, rightFrame, True)
     descripEntry = ctk.CTkTextbox(rightFrame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
     descripEntry.place(relx=0.25, rely=0.37)
+
 def clearReq(insertTrue=False):
     requireEntry.configure(state='normal')
     requireEntry.delete(0, END)
     if insertTrue == False:
-        requireEntry.configure(state='readonly')      
-def onCritSelect(event):
+        requireEntry.configure(state='readonly')
+        options.destroy()
+
+def critChoiceSelect(event):
+    global critVal
+    critVal = 1
     selectedRequire = scrllCrit.get(scrllCrit.curselection())
     clearReq(True)
     requireEntry.insert(0, selectedRequire)
     requireEntry.configure(state='readonly')
+    isCheck, values = isCheckConstraint(selectedRequire)
+    if isCheck == True:
+        options.destroy()
+        critChoiceWin(values, checkValSelect, 0.5)
+    else:
+        valueEntry.place_forget()
+        valueLabel.place_forget()
+        descripEntry.place(relx=0.25, rely=0.37)
+        descripLabel.place(relx=0.15, rely=0.31)
     options.destroy()
-def optionPickerWin():
+
+def checkValSelect(event):
+    global critVal
+    critVal = scrllCrit.get(scrllCrit.curselection())
+    valueLabel.place(relx=0.15, rely=0.29)
+    valueEntry.place(relx=0.25, rely=0.35)
+    valueEntry.delete(0, END)
+    valueEntry.insert(0, critVal)
+    valueEntry.configure(state = 'readonly')
+    descripEntry.place(relx=0.25, rely=0.47)
+    descripLabel.place(relx=0.15, rely=0.53)
+    options.destroy()
+
+def critChoiceWin(checkValues=None, onCritSelect=critChoiceSelect, btnPos=0.65):
     global options, scrllCrit
     options = Toplevel(root)
-    options.geometry("300x300+300+300")
+    options.geometry("200x200+300+300")
     options.title("Exercise Requirements")
     options.grab_set()
-    cursor.execute("PRAGMA table_info(tblCriteria)")
-    columnInfo = cursor.fetchall()
-    columnNames = [row[1] for row in columnInfo][1:]
-    scrllCrit = Listbox(options, width=300, font=('Arial', 14), relief=FLAT)
+    if not checkValues:
+        checkValues = [row[1] for row in critColumnInfo][1:]
+        Button(options, text="CANCEL", command=options.destroy).place(relx=0.35, rely=0.85)
+    Button(options, text="CLEAR", command=lambda: (clearReq(), options.destroy)).place(relx=btnPos, rely=0.85)
+    scrllCrit = Listbox(options, font=('Arial', 14), relief=FLAT)
     scroller = ctk.CTkScrollbar(scrllCrit, orientation='vertical', command=scrllCrit.yview)
     scrllCrit.config(yscrollcommand=scroller.set)
-    for option in columnNames:
+    for option in checkValues:
         scrllCrit.insert(END, option)
     scrllCrit.bind('<<ListboxSelect>>', onCritSelect)
-    scrllCrit.place(relwidth=1, relheight=0.7, anchor=N)
+    scrllCrit.place(relx=1.0, relwidth=1, relheight=0.75, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
-    Button(options, text="CANCEL", command=options.destroy).place(relx=0.35, rely=0.9)
-    Button(options, text="CLEAR", command=lambda: (clearReq(), options.destroy)).place(relx=0.65, rely=0.9)
     options.mainloop()
-#clean ui formatting ^^^^
+
+def isCheckConstraint(columnName):
+    checkConstraintName = None
+    for info in critColumnInfo:
+        if info[1] == columnName and info[3] is not None:
+            checkConstraintName = info[3]
+            break
+    if checkConstraintName:
+        selectSqlQuery=f"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = tblCriteria AND sql LIKE ?"
+        cursor.execute(selectSqlQuery, (f'%CONSTRAINT {checkConstraintName}%'))
+        checkConstraintDef = cursor.fetchone()[0]
+        valuesStart = checkConstraintDef.find('IN (') + 4
+        valuesEnd = checkConstraintDef.find(')', valuesStart)
+        acceptedValues = checkConstraintDef[valuesStart:valuesEnd].split(',')
+        acceptedValues = [value.strip().strip("'") for value in acceptedValues]
+        return True, acceptedValues
+    else:
+        return False, None
 
 def recordEdit():
-    newScreen(home,"EDIT RECORDS", icon1, "hidden", False, "hidden", "normal")
+    newScreen(home,"EDIT RECORDS", icon1, False, "hidden", "hidden", "normal")
     stuAddBtn = ctk.CTkButton(centreFrame, text="ADD STUDENT", command=lambda: stuAdd(),
                                            fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
@@ -256,10 +312,11 @@ def recordViewCCommit():
     if valid == True:
         recordView(IDChoice)
 def recordViewChoice():
-    createChoice(home,"VIEW STUDENT RECORDS")
+    newScreen(home,"VIEW STUDENT RECORDS", icon2, True, "hidden")
     makeCommitBtn(leftFrame, recordViewCCommit)
+    createChoice()
 
-def recordView():
+def recordView(IDChoice):
     pass
 
 def exViewCCommit():
@@ -267,10 +324,11 @@ def exViewCCommit():
     if valid == True:
         exView(IDChoice)
 def exViewChoice():
-    createChoice(home,"VIEW EXERCISES",'ex')
+    newScreen(home,"VIEW EXERCISES", icon2, True, "hidden")
     makeCommitBtn(leftFrame, exViewCCommit)
+    createChoice('ex')
 
-def exView():
+def exView(IDChoice):
     pass
 
 def createStuView():
@@ -311,7 +369,7 @@ def stuAddCommit():
             dialogue(f"StudentID = {stuId}\nRecord saved.")
         except:
             dialogue("Error updating student records.\n Please try again.")
-def stuAdd():                               #work out *where* actually needs to be passed <3
+def stuAdd():                             
     newScreen(recordEdit,"ADD STUDENT RECORD", icon2)
     createStuView()
     makeCommitBtn(rightFrame, stuAddCommit)
@@ -321,19 +379,20 @@ def stuEditCCommit():
     if valid == True:
         selectQuery = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {IDChoice}"
         cursor.execute(selectQuery)
-        results = cursor.fetchall()
+        results = cursor.fetchall()[0]
         stuEdit(IDChoice, results)
-def stuEditChoice():                 
-    createChoice(recordEdit,"EDIT STUDENT RECORD")
+def stuEditChoice(): 
+    newScreen(recordEdit,"EDIT STUDENT RECORD", icon2, True, "hidden")                
     makeCommitBtn(leftFrame, stuEditCCommit)
+    createChoice()
 
 def stuEditCommit():
-    IDChoice = stuIdEntry.get()
+    IDChoice = int(stuIdEntry.get())
     newStu = (foreNameEntry.get(), surNameEntry.get(), contactEntry.get(), notesEntry.get(1.0, END))
     if newStu[0] == '' or newStu[3] =='':
         dialogue("Please fill in all necessary fields marked *")
     else:
-        confirmChange(next, "Are you sure you want to change this record?")
+        confirmChange("Are you sure you want to\nchange this record?")
         if confirm == True:
             try:
                 updateQuery = f"UPDATE tblStudents SET FirstName = ?, LastName = ?, ContactInfo = ?, Notes = ?  WHERE StudentID = {IDChoice}"
@@ -345,21 +404,24 @@ def stuEditCommit():
         else:
             dialogue("Update canceled.")
 def stuEdit(IDChoice, values):    
-    newScreen(stuEditChoice,"EDIT STUDENT RECORD", icon2, "hidden", True)
+    newScreen(stuEditChoice,"EDIT STUDENT RECORD", icon2)
     createStuView()
     stuIdEntry.configure(state='normal')
     stuIdEntry.insert(0, IDChoice)
     stuIdEntry.configure(state='readonly')
-    foreNameEntry.insert(0, values[0])
-    surNameEntry.insert(0, values[1])
-    contactEntry.insert(0, values[2])
-    notesEntry.insert(1.0, values[3])
+    entryWidgets = (foreNameEntry,surNameEntry,contactEntry,notesEntry)
+    for i in range(len(entryWidgets)):
+        if values[i] != None:
+            try:
+                entryWidgets[i].insert(0, values[i])
+            except:
+                entryWidgets[i].insert(1.0, values[i])
     makeCommitBtn(rightFrame, stuEditCommit)
 
 def stuRemoveCommit():
         valid, IDChoice = confirmIDSelect()
         if valid == True:
-            confirmChange(next, "Are you sure you want to delete this record?")
+            confirmChange("Are you sure you want to\ndelete this record?")
             if confirm == True:
                 try:
                     deleteQuery = "DELETE FROM tblStudents WHERE StudentID = ?"
@@ -370,8 +432,9 @@ def stuRemoveCommit():
             else:
                 dialogue("Deletion canceled.")
 def stuRemove():
-    createChoice(recordEdit, "DELETE STUDENT RECORD")
+    newScreen(recordEdit, "DELETE STUDENT RECORD", icon2, True, "hidden")
     makeCommitBtn(leftFrame, stuRemoveCommit)
+    createChoice()
 
 def confirmIDSelect(chooseItem='stu'):
         if chooseItem == 'ex':
@@ -379,71 +442,73 @@ def confirmIDSelect(chooseItem='stu'):
         else:
             item = "Student"
         IDChoice = IDEntry.get()
-        selectQuery = f"SELECT {item}ID FROM tbl{item}s"
-        cursor.execute(selectQuery)
-        results = cursor.fetchall()
-        if IDChoice in results:
-            return True, IDChoice
-        else:
+        try:
+            IDChoice = int(IDChoice)
+            selectQuery = f"SELECT {item}ID FROM tbl{item}s"
+            cursor.execute(selectQuery)
+            results = cursor.fetchall()
+            if (IDChoice,) in results:
+                return True, IDChoice
+            else:
+                raise Exception
+        except:
             dialogue(f"Error: The selected ID {IDChoice} is invalid.")
             return False, IDChoice
+
 def onIdSelect(event):
-    selectedId = scrllID.get(scrllID.curselection())
-    IDEntry.delete(0, END)
-    IDEntry.insert(0, selectedId)
-def createChoice(StackPrev, title, chooseItem='stu'):
+    try:
+        selectedId = scrllID.get(scrllID.curselection()).split(">")[0][1:]
+        IDEntry.delete(0, END)
+        IDEntry.insert(0, selectedId)
+    except:
+        pass
+def createChoice(chooseItem='stu'):
     global IDEntry, scrllID
-    newScreen(StackPrev, title, icon2, "hidden", True)
     if chooseItem=='ex':
         fields = ("ExerciseID", "Date")
-        cursor.execute("PRAGMA table_info(tblCriteria)")
-        columnInfo = cursor.fetchall()
-        columnNames = [row[1] for row in columnInfo][1:]
-        exString = (', c.'+', c.'.join(fields)," JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
+        columnNames = [row[1] for row in critColumnInfo][1:]
+        exString = (', c.'+', c.'.join(columnNames)," JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
     else:
         fields= ("StudentID", "FirstName", "LastName")
         exString = ('','')
-
     label = fields[0][0:fields[0].find("ID")]
     labelBox(f"ENTER {label} ID", 0.31, leftFrame)
     IDEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
     IDEntry.place(relx=0.25, rely=0.38)
-    makeCommitBtn(leftFrame)                        #FIX LINE <<<<<<<<<<<<<<<<<<<<<<<<
-    scrllID = Listbox(root, width=300, font=('Arial', 14), relief=FLAT)
+    scrllID = Listbox(root, bg=bgCol1, font=('Arial', 14), relief=FLAT)
     scroller = ctk.CTkScrollbar(scrllID, orientation='vertical', command=scrllID.yview)
     scrllID.config(yscrollcommand=scroller.set)
-
+    scrllID.place(relx=1.0, relwidth=0.5, relheight=1.0, anchor=NE)
+    scroller.place(relwidth=0.05, relheight=1, anchor=E)
     selectQuery = f"SELECT main.{', main.'.join(fields)}{exString[0]} FROM tbl{label}s main{exString[1]}"
     cursor.execute(selectQuery)
     results = cursor.fetchall()
-    resultsList = []
-    for row in range(len(results)):
-        resultsList.append([])
-        for field in range(len(results[0])):
-            if field<2:
-                resultsList[row].append(results[field])
-            else:
-                if chooseItem =='stu':
-                    resultsList[row].append(results[field])     
-                    break                                       #breaks after 3 items of a student's data
-                elif str(results[row][field]) != '0' and results[row][field] == 1:
-                    resultsList[row].append(columnNames[field-2])
-                elif str(results[row][field]) != '0':
-                    resultsList[row].append(columnNames[field-2]+results[row][field])
-    for row in range(len(resultsList)):     
-        item = ", ".join(resultsList[row])  
-        scrllID.insert(END, item)
 
-    scrllID.bind('<<ListboxSelect>>', onIdSelect)
-    scrllID.place(relwidth=0.5, relheight=1)
-    scroller.place(relwidth=0.05, relheight=1, anchor=E)
-
-
-
-
-
-
-
+    if len(results) == 0:
+        scrllID.config(font=('Arial', 20))
+        scrllID.insert(0, f"NO {label.upper()}S AVAILABLE")
+        IDEntry.configure(state='readonly')
+        commitBtn.config(state='disabled')
+    else:
+        scrllID.bind('<<ListboxSelect>>', onIdSelect)
+        resultsList = []
+        for row in range(len(results)):
+            resultsList.append([])
+            for field in range(len(results[0])):
+                if field<2:
+                    resultsList[row].append(str(results[row][field]))
+                else:
+                    if chooseItem =='stu':
+                        if results[row][field] != None:
+                            resultsList[row].append(results[row][field])     
+                        break                                       #breaks after 3 items of a student's data
+                    elif str(results[row][field]) != '0' and results[row][field] == 1:
+                        resultsList[row].append(columnNames[field-2])
+                    elif str(results[row][field]) != '0':
+                        resultsList[row].append(columnNames[field-2]+' '+results[row][field])
+        for row in resultsList:
+            item = '<'+row[0]+'> '+"  ".join(row[1:])
+            scrllID.insert(END, item)
 
 
 def setConnections():
@@ -454,6 +519,11 @@ def setConnections():
     except:
         errMessg = f"Error: Unable to locate student database.\nCheck directory for {DATABASENAME}.db"
         error(errMessg)
+    finally:
+        if connection:
+            global critColumnInfo
+            cursor.execute("PRAGMA table_info(tblCriteria)")
+            critColumnInfo = cursor.fetchall()
     try:
         with open(DICTFILE+".json","r+") as file:
             dictionary = json.load(file)
