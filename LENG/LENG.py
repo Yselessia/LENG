@@ -14,6 +14,8 @@ import datetime
 import customtkinter as ctk                    #imports the ctk module
 from tkinter import *
 from PIL import ImageTk,Image
+import DatabaseCreator
+import SentenceAnalysis
 
 class ResizingCanvas(Canvas):                 
     def __init__(self,parent,**kwargs):
@@ -165,6 +167,31 @@ def createHome():
 def home():
     newScreen(None, "NURTURING GRAMMAR MAIN MENU", icon1, False, "hidden", "hidden", "hidden", "normal", False)
 
+def addSentenceCommit():
+    IDChoice = confirmIDSelect()
+    sentence = sentenceEntry.get()
+    sentence = sentence.replace('\n','')
+    x = sentence.replace(' ','')
+    if IDChoice and x != '':
+        global exID
+        x = SentenceAnalysis.clean_sentence(sentence)
+
+
+            
+
+def addSentence():
+    global sentenceEntry
+    newScreen(home, "CREATE EXERCISE", icon3, True)
+    #makeCommitBtn(leftFrame, addSentenceCommit, "ADD NEW") <<< this should be in the top corner
+    labelBox("ENTER SENTENCE", 0.45, leftFrame)
+    sentenceEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    sentenceEntry.place(relx=0.25, rely=0.52)
+    createChoice()
+
+
+
+
+
 def exCreateCommit():
     newEx = (descripEntry.get(1.0,END), exDateEntry.get())
     x = newEx[0].replace('\n','').replace(' ','')
@@ -177,16 +204,18 @@ def exCreateCommit():
             insertQuery = "INSERT INTO tblExercises (Description, Date) VALUES (?, ?)"
             cursor.execute(insertQuery, newEx)
             criteria = requireEntry.get()
-            exId = cursor.lastrowid
+            global exID
+            exID = cursor.lastrowid
             if criteria != '':
-                print("you are here")
-                insertQuery = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
-                cursor.execute(insertQuery, (critVal,))
-                critId = cursor.lastrowid
-                updateQuery = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {exId}"
-                cursor.execute(updateQuery)
+                dialogue("This feature is not available at the moment.")    # <<<<<<<<<<
+                #insertQuery = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
+                #cursor.execute(insertQuery, (critVal,))
+                #critId = cursor.lastrowid
+                #updateQuery = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {exID}"
+                #cursor.execute(updateQuery)
             connection.commit()
-            dialogue(f"ExerciseID = {exId}\nExercise saved.")
+            dialogue(f"ExerciseID = {exID}\nExercise saved.")
+            addSentence()
         except:
             dialogue("Error saving exercise.\n Please try again.")
 def exCreate():
@@ -213,51 +242,48 @@ def exCreate():
     descripEntry = ctk.CTkTextbox(rightFrame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
     descripEntry.place(relx=0.25, rely=0.37)
 
-def clearReq(insertTrue=False):
-    requireEntry.configure(state='normal')
-    requireEntry.delete(0, END)
-    if insertTrue == False:
-        requireEntry.configure(state='readonly')
-        options.destroy()
-
-def critChoiceSelect(event):
+def onCritSelect(event):
     global critVal
     critVal = 1
     selectedRequire = scrllCrit.get(scrllCrit.curselection())
     clearReq(True)
     requireEntry.insert(0, selectedRequire)
     requireEntry.configure(state='readonly')
-    isCheck, values = isCheckConstraint(selectedRequire)
-    if isCheck == True:
+    values = isCheckConstraint(selectedRequire)
+    if values:
         options.destroy()
-        critChoiceWin(values, checkValSelect, 0.5)
-    else:
-        valueEntry.place_forget()
-        valueLabel.place_forget()
-        descripEntry.place(relx=0.25, rely=0.37)
-        descripLabel.place(relx=0.15, rely=0.31)
+        critChoiceWin(values, onValSelect, 0.5)
     options.destroy()
-
-def checkValSelect(event):
+def clearReq(insertTrue=False):
+    requireEntry.configure(state='normal')
+    requireEntry.delete(0, END)
+    if insertTrue == False:
+        requireEntry.configure(state='readonly')
+        options.destroy()
+    valueEntry.place_forget()
+    valueLabel.place_forget()
+    descripEntry.place(relx=0.25, rely=0.37)
+    descripLabel.place(relx=0.15, rely=0.31)
+def onValSelect(event):
     global critVal
     critVal = scrllCrit.get(scrllCrit.curselection())
     valueLabel.place(relx=0.15, rely=0.29)
     valueEntry.place(relx=0.25, rely=0.35)
+    valueEntry.configure(state = 'normal')
     valueEntry.delete(0, END)
     valueEntry.insert(0, critVal)
     valueEntry.configure(state = 'readonly')
-    descripEntry.place(relx=0.25, rely=0.47)
-    descripLabel.place(relx=0.15, rely=0.53)
+    descripEntry.place(relx=0.25, rely=0.53)
+    descripLabel.place(relx=0.15, rely=0.47)
     options.destroy()
-
-def critChoiceWin(checkValues=None, onCritSelect=critChoiceSelect, btnPos=0.65):
+def critChoiceWin(checkValues=None, onSelect=onCritSelect, btnPos=0.65):
     global options, scrllCrit
     options = Toplevel(root)
     options.geometry("200x200+300+300")
     options.title("Exercise Requirements")
     options.grab_set()
     if not checkValues:
-        checkValues = [row[1] for row in critColumnInfo][1:]
+        checkValues = [row[1] for row in critColumnInfo]
         Button(options, text="CANCEL", command=options.destroy).place(relx=0.35, rely=0.85)
     Button(options, text="CLEAR", command=lambda: (clearReq(), options.destroy)).place(relx=btnPos, rely=0.85)
     scrllCrit = Listbox(options, font=('Arial', 14), relief=FLAT)
@@ -265,28 +291,27 @@ def critChoiceWin(checkValues=None, onCritSelect=critChoiceSelect, btnPos=0.65):
     scrllCrit.config(yscrollcommand=scroller.set)
     for option in checkValues:
         scrllCrit.insert(END, option)
-    scrllCrit.bind('<<ListboxSelect>>', onCritSelect)
+    scrllCrit.bind('<<ListboxSelect>>', onSelect)
     scrllCrit.place(relx=1.0, relwidth=1, relheight=0.75, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
     options.mainloop()
-
 def isCheckConstraint(columnName):
-    checkConstraintName = None
-    for info in critColumnInfo:
-        if info[1] == columnName and info[3] is not None:
-            checkConstraintName = info[3]
-            break
-    if checkConstraintName:
-        selectSqlQuery=f"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = tblCriteria AND sql LIKE ?"
-        cursor.execute(selectSqlQuery, (f'%CONSTRAINT {checkConstraintName}%'))
-        checkConstraintDef = cursor.fetchone()[0]
-        valuesStart = checkConstraintDef.find('IN (') + 4
-        valuesEnd = checkConstraintDef.find(')', valuesStart)
-        acceptedValues = checkConstraintDef[valuesStart:valuesEnd].split(',')
+    try:
+        checkTypeIsIn = columnName.index('Is', len(columnName)-2)     #raises exception if column is not (Is) type
+        selectSqlQuery = f"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'tblCriteria'"
+        cursor.execute(selectSqlQuery)
+        tableDefinition = cursor.fetchone()[0]
+        constraintStart = tableDefinition.index(f'CHECK({columnName} IN (') + len(f'CHECK({columnName} IN (')
+        constraintEnd = tableDefinition.index(')', constraintStart)
+        acceptedValues = tableDefinition[constraintStart:constraintEnd].split(',')
         acceptedValues = [value.strip().strip("'") for value in acceptedValues]
-        return True, acceptedValues
-    else:
-        return False, None
+        return acceptedValues
+    except:
+        checkTypeHasIn = columnName.index('Has',0,3)     #returns -1 if it is NOT a boolean (Has) column
+        if checkTypeHasIn == -1:
+            dialogue("Database error.\nThis requirement is unavailable.")
+            clearReq()      # <<<<<<<
+        return None
 
 def recordEdit():
     newScreen(home,"EDIT RECORDS", icon1, False, "hidden", "hidden", "normal")
@@ -307,30 +332,24 @@ def recordEdit():
                                            corner_radius=10, height=55, width=300)
     cancelBtn.place(relx=0.5, rely=0.83, anchor=CENTER)
 
-def recordViewCCommit():
-    valid, IDChoice = confirmIDSelect()
-    if valid == True:
-        recordView(IDChoice)
+def recordView():
+    IDChoice = confirmIDSelect()
+    if IDChoice:
+        pass            # <<<<<<<<<<<<<
 def recordViewChoice():
     newScreen(home,"VIEW STUDENT RECORDS", icon2, True, "hidden")
-    makeCommitBtn(leftFrame, recordViewCCommit)
+    makeCommitBtn(leftFrame, recordView)
     createChoice()
 
-def recordView(IDChoice):
-    pass
-
-def exViewCCommit():
-    valid, IDChoice = confirmIDSelect('ex')
-    if valid == True:
-        exView(IDChoice)
+def exView():
+    IDChoice = confirmIDSelect('ex')
+    if IDChoice:
+        pass            # <<<<<<<<
 def exViewChoice():
     newScreen(home,"VIEW EXERCISES", icon2, True, "hidden")
-    makeCommitBtn(leftFrame, exViewCCommit)
+    makeCommitBtn(leftFrame, exView)
     createChoice('ex')
-
-def exView(IDChoice):
-    pass
-
+    
 def createStuView():
     global stuIdEntry, foreNameEntry, surNameEntry, contactEntry, notesEntry
     labelBox("STUDENT ID", 0.1, leftFrame)
@@ -375,8 +394,8 @@ def stuAdd():
     makeCommitBtn(rightFrame, stuAddCommit)
 
 def stuEditCCommit():
-    valid, IDChoice = confirmIDSelect()
-    if valid == True:
+    IDChoice = confirmIDSelect()
+    if IDChoice:
         selectQuery = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {IDChoice}"
         cursor.execute(selectQuery)
         results = cursor.fetchall()[0]
@@ -419,41 +438,41 @@ def stuEdit(IDChoice, values):
     makeCommitBtn(rightFrame, stuEditCommit)
 
 def stuRemoveCommit():
-        valid, IDChoice = confirmIDSelect()
-        if valid == True:
-            confirmChange("Are you sure you want to\ndelete this record?")
-            if confirm == True:
-                try:
-                    deleteQuery = "DELETE FROM tblStudents WHERE StudentID = ?"
-                    connection.commit(deleteQuery,(IDChoice,))
-                    dialogue(f"Record for student {IDChoice} deleted.")
-                except:
-                    dialogue("Error updating student records.\n Please try again.")
-            else:
-                dialogue("Deletion canceled.")
+    IDChoice = confirmIDSelect()
+    if IDChoice:
+        confirmChange("Are you sure you want to\ndelete this record?")
+        if confirm == True:
+            try:
+                deleteQuery = "DELETE FROM tblStudents WHERE StudentID = ?"
+                connection.commit(deleteQuery,(IDChoice,))
+                dialogue(f"Record for student {IDChoice} deleted.")
+            except:
+                dialogue("Error updating student records.\n Please try again.")
+        else:
+            dialogue("Deletion canceled.")
 def stuRemove():
     newScreen(recordEdit, "DELETE STUDENT RECORD", icon2, True, "hidden")
     makeCommitBtn(leftFrame, stuRemoveCommit)
     createChoice()
 
 def confirmIDSelect(chooseItem='stu'):
-        if chooseItem == 'ex':
-            item = "Exercise"
+    if chooseItem == 'ex':
+        item = "Exercise"
+    else:
+        item = "Student"
+    IDChoice = IDEntry.get()
+    try:
+        IDChoice = int(IDChoice)
+        selectQuery = f"SELECT {item}ID FROM tbl{item}s"
+        cursor.execute(selectQuery)
+        results = cursor.fetchall()
+        if (IDChoice,) in results:
+            return IDChoice
         else:
-            item = "Student"
-        IDChoice = IDEntry.get()
-        try:
-            IDChoice = int(IDChoice)
-            selectQuery = f"SELECT {item}ID FROM tbl{item}s"
-            cursor.execute(selectQuery)
-            results = cursor.fetchall()
-            if (IDChoice,) in results:
-                return True, IDChoice
-            else:
-                raise Exception
-        except:
-            dialogue(f"Error: The selected ID {IDChoice} is invalid.")
-            return False, IDChoice
+            raise Exception
+    except:
+        dialogue(f"Error: The selected ID {IDChoice} is invalid.")
+        return None
 
 def onIdSelect(event):
     try:
@@ -466,8 +485,8 @@ def createChoice(chooseItem='stu'):
     global IDEntry, scrllID
     if chooseItem=='ex':
         fields = ("ExerciseID", "Date")
-        columnNames = [row[1] for row in critColumnInfo][1:]
-        exString = (', c.'+', c.'.join(columnNames)," JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
+        columnNames = [row[1] for row in critColumnInfo]
+        exString = (', c.'+', c.'.join(columnNames)," LEFT JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
     else:
         fields= ("StudentID", "FirstName", "LastName")
         exString = ('','')
@@ -480,10 +499,10 @@ def createChoice(chooseItem='stu'):
     scrllID.config(yscrollcommand=scroller.set)
     scrllID.place(relx=1.0, relwidth=0.5, relheight=1.0, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
+
     selectQuery = f"SELECT main.{', main.'.join(fields)}{exString[0]} FROM tbl{label}s main{exString[1]}"
     cursor.execute(selectQuery)
     results = cursor.fetchall()
-
     if len(results) == 0:
         scrllID.config(font=('Arial', 20))
         scrllID.insert(0, f"NO {label.upper()}S AVAILABLE")
@@ -502,10 +521,12 @@ def createChoice(chooseItem='stu'):
                         if results[row][field] != None:
                             resultsList[row].append(results[row][field])     
                         break                                       #breaks after 3 items of a student's data
-                    elif str(results[row][field]) != '0' and results[row][field] == 1:
+                    elif results[row][field] != 0 and results[row][field] == 1:
                         resultsList[row].append(columnNames[field-2])
-                    elif str(results[row][field]) != '0':
+                    elif results[row][field] != 0 and results[row][field]: 
                         resultsList[row].append(columnNames[field-2]+' '+results[row][field])
+                    else:
+                        break                                       #breaks if no criteria
         for row in resultsList:
             item = '<'+row[0]+'> '+"  ".join(row[1:])
             scrllID.insert(END, item)
@@ -517,20 +538,37 @@ def setConnections():
         connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
         cursor = connection.cursor()
     except:
-        errMessg = f"Error: Unable to locate student database.\nCheck directory for {DATABASENAME}.db"
-        error(errMessg)
+        errMessg = f"Error: Student database {DATABASENAME}.db not found\nClick confirm to create new database"
+        confirmChange(errMessg)
+        if confirm == True:
+            sqlMessg = DatabaseCreator.create_database()
+            if sqlMessg:
+                errMessg = f"Error: Unable to create student database.\n{sqlMessg}"
+                error(errMessg)
+            else:
+                connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
+                cursor = connection.cursor()
+        else:
+            error("Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
     finally:
         if connection:
             global critColumnInfo
             cursor.execute("PRAGMA table_info(tblCriteria)")
-            critColumnInfo = cursor.fetchall()
+            critColumnInfo = cursor.fetchall()[1:]
     try:
         with open(DICTFILE+".json","r+") as file:
             dictionary = json.load(file)
             pass
     except:
-        errMessg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
-        error(errMessg)
+        errMessg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new database"
+        confirmChange(errMessg)
+        if confirm == True:
+            fileMessg = DatabaseCreator.create_dictionary()
+            if fileMessg:
+                errMessg = f"Error: Unable to create dictionary file.\n{fileMessg}"
+                error(errMessg)
+        else:
+            error("Error: Unable to access dictionary.\nCheck directories for {DICTFILE}.json")
 
 bgCol1 = '#f5f5f5'
 bgCol2 = '#4a4a7a'
@@ -543,6 +581,7 @@ root.geometry('800x600')
 root.title("Language Analysis Nurturing Grammar")
 icon1 = setIcon(LOGO)
 icon2 = setIcon(BACKICON)
+icon3 = setIcon(LOGO)           # <<<<<<< this should be a unique icon 'finish'
 setConnections()
 bgCanvas()
 createHome()
