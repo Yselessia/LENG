@@ -1,3 +1,7 @@
+#tragically, this is broken.
+
+
+
 FILE1 = "Oxford3000"
 FILENAME="Oxford5000"
 FILEIRREGV="irregverbs"
@@ -5,7 +9,7 @@ FILEIRREGN="irregnouns"
 FILEIRREGA="irregadj"
 DATABASENAME = "lengdatabase"
 DICTFILE = "dictionary"
-WRITABLEFILE = "temp"
+WRITABLEFILE = "tempfile"
 
 #test values    <<<<<<<<<<<
 DATABASENAME = "testdb"
@@ -108,6 +112,8 @@ def create_dictionary():
     dictionary["a"] = ["article", True, "indefinite"]
     dictionary["an"] = ["article", True, "indefinite"]
     dictionary["the"] = ["article", True, "definite"]
+    dictionary["she"] = ["pron", True, "they"]          #how do plural :(
+    dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
     try:
         currentFile = FILE1
         with open(FILE1+".txt","r") as file:                #opens file
@@ -140,7 +146,8 @@ def create_dictionary():
                     if x == 3:
                         file.write(":")                         #verb end eg ":read read reading :"
                         x = 0
-
+        
+        currentFile = "error.."
         with open(WRITABLEFILE+".txt","r") as file:
             f= file.read()
             f= f.split(":")
@@ -152,20 +159,33 @@ def create_dictionary():
                     data= dictionary[key]
                     if type(data[0]) == int:
                         for i in data:
-                            if "v." in dictionary[i]:
-                                data= dictionary[data[i]]
+                            if dictionary[i][0] == "v":
+                                data= dictionary[i]
                                 key= i
-                    vforms= line.split(" ")                  
-                    while "" in vforms:
-                        vforms.remove("")
-                    for i in range(len(vforms)):
-                        form = vforms[i]
-                        slash = form.find("/")
-                        if slash != -1:
-                            vforms[i] = [form[:slash], form[slash+1:]]
-                    data[1] = True                              #True symbolises that the word is irregular 
-                    data.append(vforms)
-                    dictionary[key]= data
+                    if data[0] == "v":
+                        vforms= line.split(" ")
+                        while "" in vforms:
+                            vforms.remove("")
+                        for i in range(len(vforms)):
+                            form = vforms[i]
+                            slash = form.find("/")
+                            if slash != -1:
+                                vforms[i] = [form[:slash], form[slash+1:]]
+                        data[1] = True                              #True symbolises that the word is irregular 
+                        form = vforms[0]
+                        if form[len(form)-1] == ",":
+                            formend = form.index(",")
+                            vforms[0] = form[:formend]
+                            vforms.insert(1,form[formend+1:])    
+                        else:
+                            vforms.insert(1,form+"s")
+                        data.append(vforms)
+                        dictionary[key]= data
+        data = dictionary["be"]
+        data[1] = True                              #True symbolises that the word is irregular 
+        data.append(["am","is","were","been","was","are"])   #take note! this one is super-irregular.>
+        dictionary[key]= data                       #>You can check for it by looking at the length of the irregforms array>
+                                                    #>or deal with it entirely separately!
 
         currentFile = FILEIRREGN
         with open(FILEIRREGN+".txt","r") as file:            #nouns
@@ -180,16 +200,17 @@ def create_dictionary():
                     data= dictionary[key]
                     if type(data[0]) == int:
                         for i in data:
-                            if "n." in dictionary[i]:
-                                data= dictionary[data[i]]
+                            if dictionary[i][0] == "n":
+                                data= dictionary[i]
                                 key= i
-                    plural= line[wordend+2:]
-                    slash = plural.find(" or ")
-                    if slash != -1:
-                        plural= [plural[:slash], plural[slash+4:]]
-                    data[1] = True                              #True symbolises that the word is irregular 
-                    data.append(plural)
-                    dictionary[key]= data
+                    if data[0] == "n":
+                        plural= line[wordend+2:]
+                        slash = plural.find(" or ")
+                        if slash != -1:
+                            plural= [plural[:slash], plural[slash+4:]]
+                        data[1] = True                              #True symbolises that the word is irregular 
+                        data.append(plural)
+                        dictionary[key]= data
 
         currentFile = FILEIRREGA
         with open(FILEIRREGA+".txt","r") as file:
@@ -205,10 +226,10 @@ def create_dictionary():
                     data= dictionary[key]
                     if type(data[0]) == int:
                         for i in data:
-                            if "n." in dictionary[i]:
-                                data= dictionary[data[i]]
+                            if dictionary[i][0] == "adj":
+                                data= dictionary[i]
                                 key= i
-                    sup_comp = line[0:line.find("–")].split("\t")[1:3]
+                    sup_comp = line[:line.find("–")].split("\t")[1:3]
                     sup_comp = [i.lower() for i in sup_comp]
                     ''' #this is not necessary with the current wordlist
                     if "/" in sup_comp[0] or "/" in sup_comp[0]:
@@ -318,6 +339,6 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
 #if error:
 #    print(error)
 
-error = create_dictionary()
-if error:
-    print(error)
+#error = create_dictionary()
+#if error:
+#    print(error)

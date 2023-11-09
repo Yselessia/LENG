@@ -53,19 +53,25 @@ def dialogue(newMessg="Dialogue error."):
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master=winMessg, text="close dialogue", command=lambda: (winMessg.destroy()) , fg_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
-def confirmChange(changeMessg):
+def confirmChange(changeMessg, root=True):
     global confirm
     confirm = False
-    winCheck = Toplevel(root)
-    winCheck.grab_set()
+    if root == True:
+        winCheck = Toplevel(root)
+        winCheck.grab_set()
+    else: 
+        winCheck = Tk()
     winCheck.overrideredirect(True)
     winCheck.geometry('400x200+400+200')
     messg = Label(master=winCheck, text=changeMessg, font=('Arial',16), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     cancelBtn = ctk.CTkButton(master=winCheck, text="cancel", command=lambda: (winCheck.destroy()), width=90, fg_color='black', corner_radius=10)
-    confirmBtn = ctk.CTkButton(master=winCheck, text="confirm", command=commit(), width=90, fg_color='black', corner_radius=10)
+    confirmBtn = ctk.CTkButton(master=winCheck, text="confirm", command=lambda: (commit(), winCheck.destroy()), width=90, fg_color='black', corner_radius=10)
     cancelBtn.place(relx=0.35, rely=0.9, anchor=S)
     confirmBtn.place(relx=0.65, rely=0.9, anchor=S)
+    if root == False:
+        winCheck.mainloop()
+
 def commit():
     global confirm
     confirm = True
@@ -175,8 +181,6 @@ def addSentenceCommit():
     if IDChoice and x != '':
         global exID
         x = SentenceAnalysis.clean_sentence(sentence)
-
-
             
 
 def addSentence():
@@ -391,7 +395,7 @@ def stuAddCommit():
 def stuAdd():                             
     newScreen(recordEdit,"ADD STUDENT RECORD", icon2)
     createStuView()
-    makeCommitBtn(rightFrame, stuAddCommit)
+    makeCommitBtn(leftFrame, stuAddCommit)
 
 def stuEditCCommit():
     IDChoice = confirmIDSelect()
@@ -539,7 +543,7 @@ def setConnections():
         cursor = connection.cursor()
     except:
         errMessg = f"Error: Student database {DATABASENAME}.db not found\nClick confirm to create new database"
-        confirmChange(errMessg)
+        confirmChange(errMessg,False)
         if confirm == True:
             sqlMessg = DatabaseCreator.create_database()
             if sqlMessg:
@@ -560,8 +564,8 @@ def setConnections():
             dictionary = json.load(file)
             pass
     except:
-        errMessg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new database"
-        confirmChange(errMessg)
+        errMessg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new dictionary.\nSome data may be missing"
+        confirmChange(errMessg,False)
         if confirm == True:
             fileMessg = DatabaseCreator.create_dictionary()
             if fileMessg:
@@ -576,13 +580,13 @@ global back
 back = [True, home]
 today = datetime.datetime.today().strftime('%Y-%m-%d')
 
+setConnections()
 root = Tk()
 root.geometry('800x600')
 root.title("Language Analysis Nurturing Grammar")
 icon1 = setIcon(LOGO)
 icon2 = setIcon(BACKICON)
 icon3 = setIcon(LOGO)           # <<<<<<< this should be a unique icon 'finish'
-setConnections()
 bgCanvas()
 createHome()
 home() 

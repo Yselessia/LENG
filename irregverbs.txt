@@ -294,7 +294,7 @@ gave
 
 given
 
-go
+go,goes
 	
 
 went
@@ -310,7 +310,7 @@ grew
 
 grown
 
-have
+have,has
 	
 
 had
