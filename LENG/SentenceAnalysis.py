@@ -1,39 +1,84 @@
+'''
+                    Passive Voice:
+    The cake was eaten by the children.
+The code might not correctly identify the subject and object in passive voice sentences, 
+as it seems to assume a more straightforward sentence structure.
+                    Sentences with Pronominal References:
+    She gave him the book that I borrowed from her.
+The code might not correctly handle sentences with pronouns and their references, 
+potentially misidentifying the subject and object.
+                    Questions:
+    Did you see the movie that I recommended?
+In interrogative sentences like this, the subject-verb order is inverted. 
+The current code might not account for this inversion and could potentially misidentify the subject and object positions.
+'''
+
+
+
+'''if type(word_data[0][0]) == int: #this feels so very scuffed but i don't remember what it's for
+    key = word_data[0]
+    for i in word_data[0]:
+        word_data.append(dictionary.get(str(i)))
+    word_data = word_data[1:]'''
+#for i in range(len(word_data)):
+#    word_data[i].insert(0,word)         #the finished sentence will be " ".join(i[x][0] for i in new_sen_list)
+#word_data[0].insert(1,form)
+#new_sen_list.append(word_data)
+
+#"before": ["prep", false]
+#"begin": ["v", true, ["begin", "begins", "began", "begun"]]
+#"an": ["article", true, "indefinite"]
+#"child": ["n", true, "children"]
+
 class Word:
-    def __init__(self, word):
-        self._word = word
+    def __init__(self, word, key=None):
+        self.word = word
+        self.key = key if key else word
+        self.pos = None
         self.person = None
+        self.plural = None
+        self.tense = None
+        self.form = None        #i hate myself <3
 
-class Noun(Word):
-    def __init__(self):
-        pass
+class Sentence(list):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__num = 0
+        self.subject = None
+        self.object = None          #not sure abt this
 
-class Pronoun(Noun):    # <<<<<
-    def __init__(self):
-        pass
+    @property
+    def get_verb(self):
+        return self.get_pos("v")
+                
+    @property
+    def verb(self):
+        try:
+            num = self.__num
+            self.__num = 0
+            verb_index = self.get_verb
+            return self[verb_index[num]]
+        except (IndexError, TypeError):
+            return None
+    
+    def set_num(self, num):
+        self.__num = num
 
-'''
-class Verb(Word):
-    def __init__(self, tense):
-        self.tense = tense
-class Adjective(Word):
-    pass
-class Numeral(Adjective):   # <<<<<<
-    pass
-class Determiner(Adjective):    # <<<<<<<
-    pass
-class Article(Determiner):  # <<<<<<<<
-    pass
-class Adverb(Adjective):    # <<<<<
-    pass
-class Preposition(Word):
-    pass
-class Conjunction(Word):
-    pass
-class Interjection(Word):   # <<<<<<<
-    pass
-'''
+    def get_pos(self, pos):
+        index_list = []
+        for index in range(len(self)):
+            if self[index].pos == pos:
+                index_list.append(index)
+        return index_list
 
-def setConnections():
+    def change_word(self, index, attribute, new_value):
+        if not hasattr(self[index], attribute):
+            raise AttributeError(f"'{type(self[index]).__name__}' object has no attribute '{attribute}'")
+        setattr(self[index], attribute, new_value)
+
+        
+
+def set_connections():
     DICTFILE = 'testdictionary'
     import json
     global dictionary
@@ -42,16 +87,67 @@ def setConnections():
             dictionary = json.load(file)
             pass
     except:
-        errMessg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
-        print(errMessg)
+        err_messg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
+        print(err_messg)
 
+set_connections()
+capitals = '[A-Z]'
+import re
+
+form = "presentThird"
+key = "go"
+word1 = Word("goes", key)
+word_data = [dictionary.get(key)]
+word1.pos = word_data[0][0]
+word1.plural = True
+person = re.search(capitals, form)
+word1.person = form[person.start():].lower()
+word1.tense = form[:person.start()]
+
+form = "positive"
+key = "cheap"
+word2 = Word("cheap")
+word_data = [dictionary.get(key)]
+word2.pos = word_data[0][0]
+word2.form = form
+
+form = "presentThird"
+key = "go"
+word3 = Word("hk", key)
+word_data = [dictionary.get(key)]
+word3.pos = word_data[0][0]
+word3.plural = True
+person = re.search(capitals, form)
+word3.person = form[person.start():].lower()
+word3.tense = form[:person.start()]
+sentence1 = Sentence()
+
+sentence1.append(word1)
+sentence1.append(word2)
+sentence1.append(word3)
+print(sentence1[1].key)
+x = sentence1.verb
+print(x.word)
+sentence1.set_num(1)
+x = sentence1.verb
+print(x.word)
+x = sentence1.verb
+print(x.word)
+sentence1.get_pos("v")[0] 
+sentence1.change_word(1, 'word', "cheapest")
+print(sentence1[1].word)
+
+
+
+
+
+'''
 def clean_sentence(sentence):
     #in this, each word, number, punctuation mark, is separated by a space.
     cleaned_sentence = re.sub(r'([^a-zA-Z\']+)', r' \1 ', sentence)
     cleaned_sentence_words = re.sub(r'[^a-zA-Z\']+', ' ', sentence)
     # Split the cleaned sentence into words
     return cleaned_sentence_words.split(), cleaned_sentence
-
 def call_lemma(word):
     lemma = [None]
     ln = len(word)                      #length of the word is stored in a variable as it is used often
@@ -81,18 +177,18 @@ def call_lemma(word):
 
     elif (word[ln-2:ln] == "er" and (word[ln-3] != "y" or re.match(f'{vowel}y', word[ln-3:ln-1]))) or word[ln-2:ln] == "ed" or word[ln-3:ln] == "est":
         if word[ln-3:ln] == "est":
-            wordT = word[:ln-1]         #superlative adj
+            word_temp = word[:ln-1]         #superlative adj
         else:
-            wordT = word                #comparative adj or verb simple past
-        lnT = len(wordT)                #length of the word is stored in a variable as it is used often
-        if wordT[lnT-3:lnT-1] == "ie":
-            lemma = [wordT[:lnT-3]+"y"]             #as in happy
-        elif wordT[lnT-2] == wordT[lnT-3]:
-            lemma = [wordT[:lnT-2]]                 #as in tall
-            lemma.append(wordT[:lnT-3])             #as in fat
+            word_temp = word                #comparative adj or verb simple past
+        lnT = len(word_temp)                #length of the word is stored in a variable as it is used often
+        if word_temp[lnT-3:lnT-1] == "ie":
+            lemma = [word_temp[:lnT-3]+"y"]             #as in happy
+        elif word_temp[lnT-2] == word_temp[lnT-3]:
+            lemma = [word_temp[:lnT-2]]                 #as in tall
+            lemma.append(word_temp[:lnT-3])             #as in fat
         else:
-            lemma = [wordT[:lnT-1]]                 #as in simple, (danced)
-            lemma.append(wordT[:lnT-2])             #as in fast, (stayed)
+            lemma = [word_temp[:lnT-1]]                 #as in simple, (danced)
+            lemma.append(word_temp[:lnT-2])             #as in fast, (stayed)
         match word[ln-1]:
             case "t":
                 form = "superlative"
@@ -111,12 +207,11 @@ def find_word(word):
     consonant= '[a-z&&[^aeiou]]'
     vowel = '[aeiou]'
     word = spell.correction(word.lower())
-
     #the first option is that the word is a root word, so a key in the dictionary
-    wordData = [dictionary.get(word)]               #fix datatype for this!!!!!
-    if wordData[0]:
+    word_data = [dictionary.get(word)]               #fix datatype for this!!!!!
+    if word_data[0]:
         key = word
-        match wordData[0]:
+        match word_data[0]:
             case "n":
                 form = "singular"
             case "v":
@@ -165,60 +260,57 @@ def find_word(word):
                         #2"were" - Past second person singular and all persons plural
                         #4"was" - Past first and third person singular
                         #5"are" - Present second person singular and all persons plural
-                    wordData = [dictionary.get(key)]
+                    word_data = [dictionary.get(key)]
                     break
         #
         if not index:
             #it could also be a regular form of a word
-            lemmaVar, form = call_lemma(word)
-            wordData = []
-            for i in range(len(lemmaVar)):
-                lemData = dictionary.get(lemmaVar[i][0])
-                if lemData and (lemData[1] == False or word[len(word)-3:len(word)] == "ing"):
-                    wordData.append(lemData)
-                    key = lemmaVar[i][0]
-                    form = lemmaVar[i][1]
-                    break                   #add possibility of multiple possible words being returned in lemmaVar
-            if wordData:
+            lemma_var, form = call_lemma(word)
+            word_data = []
+            for i in range(len(lemma_var)):
+                lemma_data = dictionary.get(lemma_var[i][0])
+                if lemma_data and (lemma_data[1] == False or word[len(word)-3:len(word)] == "ing"):
+                    word_data.append(lemma_data)
+                    key = lemma_var[i][0]
+                    form = lemma_var[i][1]
+                    break                   #add possibility of multiple possible words being returned in lemma_var
+            if word_data:
                 colon = form.find(":")
                 if colon !=-1:
-                    if wordData[0] == "n":
+                    if word_data[0] == "n":
                         form = form[:colon]
-                    elif wordData[0] == "v":
+                    elif word_data[0] == "v":
                         form = form[colon+1:]
-            
-    if wordData:
-        word_append(wordData, word, form)
+    if word_data:
+        word_append(word_data, word, form)
     else:
         print("Word not found")
-    
+
+def word_append(word_data, word, form):
+    global key
+    if type(word_data[0][0]) == int: #this feels so very scuffed but i don't remember what it's for
+        key = word_data[0]
+        for i in word_data[0]:
+            word_data.append(dictionary.get(str(i)))
+        word_data = word_data[1:]
+    for i in range(len(word_data)):
+        word_data[i].insert(0,word)         #the finished sentence will be " ".join(i[x][0] for i in new_sen_list)
+    word_data[0].insert(1,form)
+    new_sen_list.append(word_data)
 
 #i have a feeling i'll need this at some point
 def get_dupli_data():
-    pass    
-
-def word_append(wordData, word, form):
-    global key
-    if type(wordData[0][0]) == int: #this feels so very scuffed but i don't remember what it's for
-        key = wordData[0]
-        for i in wordData[0]:
-            wordData.append(dictionary.get(str(i)))
-        wordData = wordData[1:]
-
-    for i in range(len(wordData)):
-        wordData[i].insert(0,word)         #the finished sentence will be " ".join(i[x][0] for i in newSenList)
-    wordData[0].insert(1,form)
-    newSenList.append(wordData)
+    pass  
 
 from spellchecker import SpellChecker
 import string
 import re                           #imports regex
 spell = SpellChecker()
 
-setConnections()
+set_connections()
 #here we split the sentence into a list of words
 sentence = input("Please enter a sentence: ")
-newSenList = []     #fix this
+new_sen_list = []     #fix this
 if sentence != "":
     words, x = clean_sentence(sentence)
     for word in words:
@@ -226,5 +318,6 @@ if sentence != "":
 else:
     word = input()
     find_word(word)
-print(newSenList)
+print(new_sen_list)
 
+'''

@@ -35,520 +35,520 @@ class ResizingCanvas(Canvas):
         # rescales all the objects tagged with the "all" tag
         self.scale("all",0,0,wscale,hscale)
 
-def error(errMessg="Unknown Error."):
-    winErr = Tk()
-    winErr.overrideredirect(True)
-    winErr.geometry('400x200+400+200')
-    messg = Label(master=winErr, text=errMessg+"\nClosing program", font=('Arial',14), height=25, width=120)
+def error( err_messg="Unknown Error."):
+    win_err = Tk()
+    win_err.overrideredirect(True)
+    win_err.geometry('400x200+400+200')
+    messg = Label(master= win_err, text= err_messg+"\nClosing program", font=('Arial',14), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
-    button = ctk.CTkButton(master=winErr, text="close", command=lambda: (winErr.destroy(), sys.exit()) , fg_color='black', corner_radius=10)
+    button = ctk.CTkButton(master= win_err, text="close", command=lambda: ( win_err.destroy(), sys.exit()) , fg_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
-    winErr.mainloop()
-def dialogue(newMessg="Dialogue error."):
-    winMessg = Toplevel(root)
-    winMessg.grab_set()
-    winMessg.overrideredirect(True)
-    winMessg.geometry('400x200+400+200')
-    messg = Label(master=winMessg, text=newMessg, font=('Arial',14), height=25, width=120)
+    win_err.mainloop()
+def dialogue(new_messg="Dialogue error."):
+    win_messg = Toplevel(root)
+    win_messg.grab_set()
+    win_messg.overrideredirect(True)
+    win_messg.geometry('400x200+400+200')
+    messg = Label(master=win_messg, text=new_messg, font=('Arial',14), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
-    button = ctk.CTkButton(master=winMessg, text="close dialogue", command=lambda: (winMessg.destroy()) , fg_color='black', corner_radius=10)
+    button = ctk.CTkButton(master=win_messg, text="close dialogue", command=lambda: (win_messg.destroy()) , fg_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
-def confirmChange(changeMessg, root=True):
+def confirm_change(change_messg, root=True):
     global confirm
     confirm = False
     if root == True:
-        winCheck = Toplevel(root)
-        winCheck.grab_set()
+        win_check = Toplevel(root)
+        win_check.grab_set()
     else: 
-        winCheck = Tk()
-    winCheck.overrideredirect(True)
-    winCheck.geometry('400x200+400+200')
-    messg = Label(master=winCheck, text=changeMessg, font=('Arial',16), height=25, width=120)
+        win_check = Tk()
+    win_check.overrideredirect(True)
+    win_check.geometry('400x200+400+200')
+    messg = Label(master= win_check, text=change_messg, font=('Arial',16), height=25, width=120)
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
-    cancelBtn = ctk.CTkButton(master=winCheck, text="cancel", command=lambda: (winCheck.destroy()), width=90, fg_color='black', corner_radius=10)
-    confirmBtn = ctk.CTkButton(master=winCheck, text="confirm", command=lambda: (commit(), winCheck.destroy()), width=90, fg_color='black', corner_radius=10)
-    cancelBtn.place(relx=0.35, rely=0.9, anchor=S)
-    confirmBtn.place(relx=0.65, rely=0.9, anchor=S)
+    cancel_btn = ctk.CTkButton(master= win_check, text="cancel", command=lambda: (win_check.destroy()), width=90, fg_color='black', corner_radius=10)
+    confirm_btn = ctk.CTkButton(master= win_check, text="confirm", command=lambda: (commit(), win_check.destroy()), width=90, fg_color='black', corner_radius=10)
+    cancel_btn.place(relx=0.35, rely=0.9, anchor=S)
+    confirm_btn.place(relx=0.65, rely=0.9, anchor=S)
     if root == False:
-        winCheck.mainloop()
+         win_check.mainloop()
 
 def commit():
     global confirm
     confirm = True
 
-def backCommand():
+def  back_command():
     if back[0] == True:
         back[1]()
-def makeCommitBtn(frame, commit, messg="COMMIT"):
-    global commitBtn
-    commitBtn = Button(frame, text=messg, command=lambda: commit(), font=('Arial',12), height=3, width=8, borderwidth=2)
-    commitBtn.place(relx=0.5, rely=0.9, anchor=S)
-def setIcon(file):
+def make_commit_btn(frame, commit, messg="COMMIT"):
+    global commit_btn
+    commit_btn = Button(frame, text=messg, command=lambda: commit(), font=('Arial',12), height=3, width=8, borderwidth=2)
+    commit_btn.place(relx=0.5, rely=0.9, anchor=S)
+def set_icon(file):
     size= (70,70)
     icon = Image.open(file+'.gif')
     var = icon.resize(size)
     var = ImageTk.PhotoImage(var)
     return var
-def labelBox(label, ypos, frame, returnID=False):
-    labelID = Label(frame, text=label.upper(), bg=bgCol2, fg='white', font=('Arial',12))
-    labelID.place(relx=0.15,rely=ypos)
-    if returnID==True:
-        return labelID
-def dateFormatted(string):
+def label_box(label, ypos, frame, return_id=False):
+    label_id = Label(frame, text=label.upper(), bg=bg_col2, fg='white', font=('Arial',12))
+    label_id.place(relx=0.15,rely=ypos)
+    if return_id==True:
+        return label_id
+def date_formatted(string):
     try: 
         datetime.datetime.strptime(string, '%Y-%m-%d') 
         return True
     except ValueError:
         return False
     
-def clearFrame(frame):
+def clear_frame(frame):
    for widgets in frame.winfo_children():
       widgets.destroy()
-def newScreen(StackPrev, pageTitle, img, scrollState=False, rightState="normal", leftState="normal", centreState="hidden", mainState="hidden", callTrue=True):
+def new_screen(stack_prev, page_title, img, scroll_state=False, right_state="normal", left_state="normal", centre_state="hidden", main_state="hidden", call_true=True):
     global title, back
-    back[0] = callTrue
-    back[1] = StackPrev
-    clearFrame(rightFrame)
-    clearFrame(leftFrame)
-    clearFrame(centreFrame)
-    backButton.configure(image=img)
-    backButton.image = img
-    canvas.itemconfig(mainWin, state=mainState)
-    canvas.itemconfig(centreWin, state=centreState)
-    canvas.itemconfig(leftWin, state=leftState)
-    canvas.itemconfig(rightWin, state=rightState)
-    if scrollState == True:
-        pageTitle = pageTitle.replace(" ","\n")
-        xVal = 288
+    back[0] = call_true
+    back[1] = stack_prev
+    clear_frame(right_frame)
+    clear_frame(left_frame)
+    clear_frame(centre_frame)
+    back_button.configure(image=img)
+    back_button.image = img
+    canvas.itemconfig(main_win, state=main_state)
+    canvas.itemconfig(centre_win, state=centre_state)
+    canvas.itemconfig(left_win, state=left_state)
+    canvas.itemconfig(right_win, state=right_state)
+    if scroll_state == True:
+        page_title = page_title.replace(" ","\n")
+        xval = 288
     else:
         try:
-            scrllID.destroy()
+            scrll_id.destroy()
         except:
             pass
-        xVal=588
+        xval=588
     try:
         canvas.delete(title)
     except NameError:
         pass
-    title = canvas.create_text(xVal, 111, text=pageTitle, width=400, font=('Arial',25), justify=RIGHT, anchor=E)
+    title = canvas.create_text(xval, 111, text=page_title, width=400, font=('Arial',25), justify=RIGHT, anchor=E)
 
-def bgCanvas():   
-    global canvas, backButton, mainWinFrame, mainWin, leftFrame, leftWin, rightFrame, rightWin, centreFrame, centreWin
-    canvas = ResizingCanvas(root, bg=bgCol1, height = 600, width=600)
+def bg_canvas():   
+    global canvas, back_button, main_win_frame, main_win, left_frame, left_win, right_frame, right_win, centre_frame, centre_win
+    canvas = ResizingCanvas(root, bg=bg_col1, height = 600, width=600)
     canvas.create_arc(299, 188, 600, 288, start=10, extent=170, 
-                      fill=bgCol2, outline='')
-    canvas.create_rectangle(0, 230, 600, 600, fill=bgCol2, outline='')
+                      fill=bg_col2, outline='')
+    canvas.create_rectangle(0, 230, 600, 600, fill=bg_col2, outline='')
     canvas.create_arc(0, 172, 301, 272, start=190, extent=170, 
-                      fill=bgCol1, outline='')
+                      fill=bg_col1, outline='')
     canvas.place(relheight=1, relwidth=1)
-    backButton= Button(root, image=icon1, command=lambda: backCommand(), borderwidth=2)
-    backButton.place(x=20, y=20, anchor=NW)
+    back_button= Button(root, image=icon1, command=lambda:  back_command(), borderwidth=2)
+    back_button.place(x=20, y=20, anchor=NW)
 
-    mainWinFrame = Frame (root, bg=bgCol2)
-    mainWin = canvas.create_window(300, 588, window=mainWinFrame, height=300, width=300, anchor=S)
-    leftFrame = Frame (root, bg=bgCol2)
-    leftWin = canvas.create_window(22, 588, window=leftFrame, height=315, width=260, anchor=SW)
-    rightFrame = Frame (root, bg=bgCol2)
-    rightWin = canvas.create_window(579, 588, window=rightFrame, height=375, width=260, anchor=SE)
-    centreFrame = Frame (root, bg=bgCol2)
-    centreWin = canvas.create_window(300, 588, window=centreFrame, height=300, width=300, anchor=S)
+    main_win_frame = Frame (root, bg=bg_col2)
+    main_win = canvas.create_window(300, 588, window=main_win_frame, height=300, width=300, anchor=S)
+    left_frame = Frame (root, bg=bg_col2)
+    left_win = canvas.create_window(22, 588, window=left_frame, height=315, width=260, anchor=SW)
+    right_frame = Frame (root, bg=bg_col2)
+    right_win = canvas.create_window(579, 588, window=right_frame, height=375, width=260, anchor=SE)
+    centre_frame = Frame (root, bg=bg_col2)
+    centre_win = canvas.create_window(300, 588, window=centre_frame, height=300, width=300, anchor=S)
 
-def createHome():
-    exCreateBtn = ctk.CTkButton(mainWinFrame, text="CREATE AN EXERCISE", command=lambda: exCreate(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+def create_home():
+    ex_create_btn = ctk.CTkButton(main_win_frame, text="CREATE AN EXERCISE", command=lambda: ex_create(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    exCreateBtn.place(relx=0.5, rely=0.11, anchor=CENTER)
-    recordEditBtn = ctk.CTkButton(mainWinFrame, text="EDIT STUDENT RECORDS", command=lambda: recordEdit(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    ex_create_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
+    record_edit_btn = ctk.CTkButton(main_win_frame, text="EDIT STUDENT RECORDS", command=lambda: record_edit(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    recordEditBtn.place(relx=0.5, rely=0.35, anchor=CENTER)
-    recordViewBtn = ctk.CTkButton(mainWinFrame, text="VIEW STUDENT RECORDS", command=lambda: recordViewChoice(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    record_edit_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
+    record_view_btn = ctk.CTkButton(main_win_frame, text="VIEW STUDENT RECORDS", command=lambda: record_view_choice(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    recordViewBtn.place(relx=0.5, rely=0.59, anchor=CENTER)
-    exViewBtn = ctk.CTkButton(mainWinFrame, text="VIEW EXERCISES", command=lambda: exViewChoice(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    record_view_btn.place(relx=0.5, rely=0.59, anchor=CENTER)
+    ex_view_btn = ctk.CTkButton(main_win_frame, text="VIEW EXERCISES", command=lambda: ex_view_choice(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    exViewBtn.place(relx=0.5, rely=0.83, anchor=CENTER)
+    ex_view_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 def home():
-    newScreen(None, "NURTURING GRAMMAR MAIN MENU", icon1, False, "hidden", "hidden", "hidden", "normal", False)
+    new_screen(None, "NURTURING GRAMMAR MAIN MENU", icon1, False, "hidden", "hidden", "hidden", "normal", False)
 
-def addSentenceCommit():
-    IDChoice = confirmIDSelect()
-    sentence = sentenceEntry.get()
+def add_sentence_commit():
+    id_choice = confirm_id_select()
+    sentence = sentence_entry.get()
     sentence = sentence.replace('\n','')
     x = sentence.replace(' ','')
-    if IDChoice and x != '':
-        global exID
+    if id_choice and x != '':
+        global ex_id
         x = SentenceAnalysis.clean_sentence(sentence)
             
 
-def addSentence():
-    global sentenceEntry
-    newScreen(home, "CREATE EXERCISE", icon3, True)
-    #makeCommitBtn(leftFrame, addSentenceCommit, "ADD NEW") <<< this should be in the top corner
-    labelBox("ENTER SENTENCE", 0.45, leftFrame)
-    sentenceEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, state='disabled')
-    sentenceEntry.place(relx=0.25, rely=0.52)
-    createChoice()
+def add_sentence():
+    global sentence_entry
+    new_screen(home, "CREATE EXERCISE", icon3, True)
+    #make_commit_btn(left_frame, add_sentence_commit, "ADD NEW") <<< this should be in the top corner
+    label_box("ENTER SENTENCE", 0.45, left_frame)
+    sentence_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    sentence_entry.place(relx=0.25, rely=0.52)
+    create_choice()
 
 
 
 
 
-def exCreateCommit():
-    newEx = (descripEntry.get(1.0,END), exDateEntry.get())
-    x = newEx[0].replace('\n','').replace(' ','')
-    if '' in newEx or x=='':
+def ex_create_commit():
+    new_ex = (descrip_entry.get(1.0,END), ex_date_entry.get())
+    x = new_ex[0].replace('\n','').replace(' ','')
+    if '' in new_ex or x=='':
         dialogue("Please fill in all necessary fields marked *")
-    elif dateFormatted(newEx[1]) == False:
+    elif date_formatted(new_ex[1]) == False:
         dialogue("Cannot save exercise.\nCheck date is valid YYYY-MM-DD")
     else:
         try:
-            insertQuery = "INSERT INTO tblExercises (Description, Date) VALUES (?, ?)"
-            cursor.execute(insertQuery, newEx)
-            criteria = requireEntry.get()
-            global exID
-            exID = cursor.lastrowid
+            insert_query = "INSERT INTO tblExercises (Description, Date) VALUES (?, ?)"
+            cursor.execute(insert_query, new_ex)
+            criteria = require_entry.get()
+            global ex_id
+            ex_id = cursor.lastrowid
             if criteria != '':
                 dialogue("This feature is not available at the moment.")    # <<<<<<<<<<
-                #insertQuery = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
-                #cursor.execute(insertQuery, (critVal,))
+                #insert_query = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
+                #cursor.execute(insert_query, (crit_val,))
                 #critId = cursor.lastrowid
-                #updateQuery = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {exID}"
-                #cursor.execute(updateQuery)
+                #update_query = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {ex_id}"
+                #cursor.execute(update_query)
             connection.commit()
-            dialogue(f"ExerciseID = {exID}\nExercise saved.")
-            addSentence()
+            dialogue(f"ExerciseID = {ex_id}\nExercise saved.")
+            add_sentence()
         except:
             dialogue("Error saving exercise.\n Please try again.")
-def exCreate():
-    global exDateEntry, requireEntry, valueEntry, valueLabel, descripLabel, descripEntry
-    newScreen(home,"CREATE EXERCISE", icon2)
-    makeCommitBtn(leftFrame, exCreateCommit)
-    labelBox("EXERCISE ID", 0.1, leftFrame)
-    exIdEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, state='disabled')
-    exIdEntry.place(relx=0.25, rely=0.17)
-    labelBox("EXERCISE DATE*", 0.31, leftFrame)
-    exDateEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-    exDateEntry.insert(END, today)
-    exDateEntry.place(relx=0.25, rely=0.39)
-    labelBox("REQUIREMENT",0.11, rightFrame)
-    requireEntry = ctk.CTkEntry(rightFrame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14), state='readonly')
-    requireEntry.place(relx=0.25, rely=0.17)
-    addRequire = Button(rightFrame, text="ADD", command=lambda: critChoiceWin(), font=('Arial',10), width=5, borderwidth=2)
-    addRequire.place(relx=0.8, rely=0.17)
+def ex_create():
+    global ex_date_entry, require_entry, value_entry, value_label, descrip_label, descrip_entry
+    new_screen(home,"CREATE EXERCISE", icon2)
+    make_commit_btn(left_frame, ex_create_commit)
+    label_box("EXERCISE ID", 0.1, left_frame)
+    exId_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    exId_entry.place(relx=0.25, rely=0.17)
+    label_box("EXERCISE DATE*", 0.31, left_frame)
+    ex_date_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
+    ex_date_entry.insert(END, today)
+    ex_date_entry.place(relx=0.25, rely=0.39)
+    label_box("REQUIREMENT",0.11, right_frame)
+    require_entry = ctk.CTk_entry(right_frame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14), state='readonly')
+    require_entry.place(relx=0.25, rely=0.17)
+    add_require = Button(right_frame, text="ADD", command=lambda: crit_choice_win(), font=('Arial',10), width=5, borderwidth=2)
+    add_require.place(relx=0.8, rely=0.17)
 
-    valueLabel = labelBox("REQUIREMENT TYPE",0.29, rightFrame, True)
-    valueLabel.place_forget()
-    valueEntry = ctk.CTkEntry(rightFrame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14))
-    descripLabel = labelBox("DESCRIPTION*",0.31, rightFrame, True)
-    descripEntry = ctk.CTkTextbox(rightFrame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
-    descripEntry.place(relx=0.25, rely=0.37)
+    value_label = label_box("REQUIREMENT TYPE",0.29, right_frame, True)
+    value_label.place_forget()
+    value_entry = ctk.CTk_entry(right_frame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14))
+    descrip_label = label_box("DESCRIPTION*",0.31, right_frame, True)
+    descrip_entry = ctk.CTkTextbox(right_frame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
+    descrip_entry.place(relx=0.25, rely=0.37)
 
-def onCritSelect(event):
-    global critVal
-    critVal = 1
-    selectedRequire = scrllCrit.get(scrllCrit.curselection())
-    clearReq(True)
-    requireEntry.insert(0, selectedRequire)
-    requireEntry.configure(state='readonly')
-    values = isCheckConstraint(selectedRequire)
+def on_crit_select(event):
+    global crit_val
+    crit_val = 1
+    selected_require = scrll_crit.get(scrll_crit.curselection())
+    clear_req(True)
+    require_entry.insert(0, selected_require)
+    require_entry.configure(state='readonly')
+    values = is_check_constraint(selected_require)
     if values:
         options.destroy()
-        critChoiceWin(values, onValSelect, 0.5)
+        crit_choice_win(values, on_val_select, 0.5)
     options.destroy()
-def clearReq(insertTrue=False):
-    requireEntry.configure(state='normal')
-    requireEntry.delete(0, END)
-    if insertTrue == False:
-        requireEntry.configure(state='readonly')
+def clear_req(insert_true=False):
+    require_entry.configure(state='normal')
+    require_entry.delete(0, END)
+    if insert_true == False:
+        require_entry.configure(state='readonly')
         options.destroy()
-    valueEntry.place_forget()
-    valueLabel.place_forget()
-    descripEntry.place(relx=0.25, rely=0.37)
-    descripLabel.place(relx=0.15, rely=0.31)
-def onValSelect(event):
-    global critVal
-    critVal = scrllCrit.get(scrllCrit.curselection())
-    valueLabel.place(relx=0.15, rely=0.29)
-    valueEntry.place(relx=0.25, rely=0.35)
-    valueEntry.configure(state = 'normal')
-    valueEntry.delete(0, END)
-    valueEntry.insert(0, critVal)
-    valueEntry.configure(state = 'readonly')
-    descripEntry.place(relx=0.25, rely=0.53)
-    descripLabel.place(relx=0.15, rely=0.47)
+    value_entry.place_forget()
+    value_label.place_forget()
+    descrip_entry.place(relx=0.25, rely=0.37)
+    descrip_label.place(relx=0.15, rely=0.31)
+def on_val_select(event):
+    global crit_val
+    crit_val = scrll_crit.get(scrll_crit.curselection())
+    value_label.place(relx=0.15, rely=0.29)
+    value_entry.place(relx=0.25, rely=0.35)
+    value_entry.configure(state = 'normal')
+    value_entry.delete(0, END)
+    value_entry.insert(0, crit_val)
+    value_entry.configure(state = 'readonly')
+    descrip_entry.place(relx=0.25, rely=0.53)
+    descrip_label.place(relx=0.15, rely=0.47)
     options.destroy()
-def critChoiceWin(checkValues=None, onSelect=onCritSelect, btnPos=0.65):
-    global options, scrllCrit
+def crit_choice_win(check_values=None, on_select=on_crit_select, btn_pos=0.65):
+    global options, scrll_crit
     options = Toplevel(root)
     options.geometry("200x200+300+300")
     options.title("Exercise Requirements")
     options.grab_set()
-    if not checkValues:
-        checkValues = [row[1] for row in critColumnInfo]
+    if not check_values:
+        check_values = [row[1] for row in crit_column_info]
         Button(options, text="CANCEL", command=options.destroy).place(relx=0.35, rely=0.85)
-    Button(options, text="CLEAR", command=lambda: (clearReq(), options.destroy)).place(relx=btnPos, rely=0.85)
-    scrllCrit = Listbox(options, font=('Arial', 14), relief=FLAT)
-    scroller = ctk.CTkScrollbar(scrllCrit, orientation='vertical', command=scrllCrit.yview)
-    scrllCrit.config(yscrollcommand=scroller.set)
-    for option in checkValues:
-        scrllCrit.insert(END, option)
-    scrllCrit.bind('<<ListboxSelect>>', onSelect)
-    scrllCrit.place(relx=1.0, relwidth=1, relheight=0.75, anchor=NE)
+    Button(options, text="CLEAR", command=lambda: (clear_req(), options.destroy)).place(relx=btn_pos, rely=0.85)
+    scrll_crit = Listbox(options, font=('Arial', 14), relief=FLAT)
+    scroller = ctk.CTkScrollbar(scrll_crit, orientation='vertical', command=scrll_crit.yview)
+    scrll_crit.config(yscrollcommand=scroller.set)
+    for option in check_values:
+        scrll_crit.insert(END, option)
+    scrll_crit.bind('<<ListboxSelect>>', on_select)
+    scrll_crit.place(relx=1.0, relwidth=1, relheight=0.75, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
     options.mainloop()
-def isCheckConstraint(columnName):
+def is_check_constraint(column_name):
     try:
-        checkTypeIsIn = columnName.index('Is', len(columnName)-2)     #raises exception if column is not (Is) type
-        selectSqlQuery = f"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'tblCriteria'"
-        cursor.execute(selectSqlQuery)
-        tableDefinition = cursor.fetchone()[0]
-        constraintStart = tableDefinition.index(f'CHECK({columnName} IN (') + len(f'CHECK({columnName} IN (')
-        constraintEnd = tableDefinition.index(')', constraintStart)
-        acceptedValues = tableDefinition[constraintStart:constraintEnd].split(',')
-        acceptedValues = [value.strip().strip("'") for value in acceptedValues]
-        return acceptedValues
+        check_type_is_in = column_name.index('Is', len(column_name)-2)     #raises exception if column is not (Is) type
+        select_sql_query = f"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'tblCriteria'"
+        cursor.execute(select_sql_query)
+        table_definition = cursor.fetchone()[0]
+        constraint_start = table_definition.index(f'CHECK({column_name} IN (') + len(f'CHECK({column_name} IN (')
+        constraint_end = table_definition.index(')', constraint_start)
+        accepted_values = table_definition[constraint_start:constraint_end].split(',')
+        accepted_values = [value.strip().strip("'") for value in accepted_values]
+        return accepted_values
     except:
-        checkTypeHasIn = columnName.index('Has',0,3)     #returns -1 if it is NOT a boolean (Has) column
-        if checkTypeHasIn == -1:
+        check_type_has_in = column_name.index('Has',0,3)     #returns -1 if it is NOT a boolean (Has) column
+        if check_type_has_in == -1:
             dialogue("Database error.\nThis requirement is unavailable.")
-            clearReq()      # <<<<<<<
+            clear_req()      # <<<<<<<
         return None
 
-def recordEdit():
-    newScreen(home,"EDIT RECORDS", icon1, False, "hidden", "hidden", "normal")
-    stuAddBtn = ctk.CTkButton(centreFrame, text="ADD STUDENT", command=lambda: stuAdd(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+def record_edit():
+    new_screen(home,"EDIT RECORDS", icon1, False, "hidden", "hidden", "normal")
+    stu_add_btn = ctk.CTkButton(centre_frame, text="ADD STUDENT", command=lambda: stu_add(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    stuAddBtn.place(relx=0.5, rely=0.11, anchor=CENTER)
-    stuEditBtn = ctk.CTkButton(centreFrame, text="EDIT RECORDS", command=lambda: stuEditChoice(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    stu_add_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
+    stu_edit_btn = ctk.CTkButton(centre_frame, text="EDIT RECORDS", command=lambda: stu_edit_choice(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    stuEditBtn.place(relx=0.5, rely=0.35, anchor=CENTER)
-    stuRemoveBtn = ctk.CTkButton(centreFrame, text="REMOVE STUDENT", command=lambda: stuRemove(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    stu_edit_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
+    stu_remove_btn = ctk.CTkButton(centre_frame, text="REMOVE STUDENT", command=lambda: stu_remove(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    stuRemoveBtn.place(relx=0.5, rely=0.59, anchor=CENTER)
-    cancelBtn = ctk.CTkButton(centreFrame, text="CANCEL", command=lambda: backCommand(),
-                                           fg_color=bgCol1, bg_color=bgCol2, text_color='black', font=('Arial',20), 
+    stu_remove_btn.place(relx=0.5, rely=0.59, anchor=CENTER)
+    cancel_btn = ctk.CTkButton(centre_frame, text="CANCEL", command=lambda:  back_command(),
+                                           fg_color=bg_col1, bg_color=bg_col2, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    cancelBtn.place(relx=0.5, rely=0.83, anchor=CENTER)
+    cancel_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 
-def recordView():
-    IDChoice = confirmIDSelect()
-    if IDChoice:
+def record_view():
+    id_choice = confirm_id_select()
+    if id_choice:
         pass            # <<<<<<<<<<<<<
-def recordViewChoice():
-    newScreen(home,"VIEW STUDENT RECORDS", icon2, True, "hidden")
-    makeCommitBtn(leftFrame, recordView)
-    createChoice()
+def record_view_choice():
+    new_screen(home,"VIEW STUDENT RECORDS", icon2, True, "hidden")
+    make_commit_btn(left_frame, record_view)
+    create_choice()
 
-def exView():
-    IDChoice = confirmIDSelect('ex')
-    if IDChoice:
+def ex_view():
+    id_choice = confirm_id_select('ex')
+    if id_choice:
         pass            # <<<<<<<<
-def exViewChoice():
-    newScreen(home,"VIEW EXERCISES", icon2, True, "hidden")
-    makeCommitBtn(leftFrame, exView)
-    createChoice('ex')
+def ex_view_choice():
+    new_screen(home,"VIEW EXERCISES", icon2, True, "hidden")
+    make_commit_btn(left_frame, ex_view)
+    create_choice('ex')
     
-def createStuView():
-    global stuIdEntry, foreNameEntry, surNameEntry, contactEntry, notesEntry
-    labelBox("STUDENT ID", 0.1, leftFrame)
-    stuIdEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, state='disabled')
-    stuIdEntry.place(relx=0.25, rely=0.17)
-    labelBox("FORENAME(S)*", 0.31, leftFrame)
-    foreNameEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-    foreNameEntry.place(relx=0.25, rely=0.38)
-    labelBox("SURNAME", 0.52, leftFrame)
-    surNameEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-    surNameEntry.place(relx=0.25, rely=0.59)
-    labelBox("CONTACT DETAILS*",0.11, rightFrame)
-    contactEntry = ctk.CTkEntry(rightFrame, width=200, corner_radius=10, border_width = 2,  font=('Arial', 14))
-    contactEntry.place(relx=0.25, rely=0.17)
-    labelBox("NOTES",0.31, rightFrame)
-    notesEntry = ctk.CTkTextbox(rightFrame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
-    notesEntry.place(relx=0.25, rely=0.37)
-def stuAddCommit():
-    newStu = (foreNameEntry.get(), contactEntry.get())
-    if '' in newStu:
+def create_stu_view():
+    global stu_id_entry, fore_name_entry, sur_name_entry, contact_entry,  notes_entry
+    label_box("STUDENT ID", 0.1, left_frame)
+    stu_id_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    stu_id_entry.place(relx=0.25, rely=0.17)
+    label_box("FORENAME(S)*", 0.31, left_frame)
+    fore_name_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
+    fore_name_entry.place(relx=0.25, rely=0.38)
+    label_box("SURNAME", 0.52, left_frame)
+    sur_name_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
+    sur_name_entry.place(relx=0.25, rely=0.59)
+    label_box("CONTACT DETAILS*",0.11, right_frame)
+    contact_entry = ctk.CTk_entry(right_frame, width=200, corner_radius=10, border_width = 2,  font=('Arial', 14))
+    contact_entry.place(relx=0.25, rely=0.17)
+    label_box("NOTES",0.31, right_frame)
+    notes_entry = ctk.CTkTextbox(right_frame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
+    notes_entry.place(relx=0.25, rely=0.37)
+def stu_add_commit():
+    new_stu = (fore_name_entry.get(), contact_entry.get())
+    if '' in new_stu:
         dialogue("Please fill in all necessary fields marked *")
     else:
         try:
-            insertQuery = "INSERT INTO tblStudents (FirstName, ContactInfo) VALUES (?, ?)"
-            cursor.execute(insertQuery, newStu)
-            stuId = cursor.lastrowid
-            notes = notesEntry.get(1.0,END)
-            surname = surNameEntry.get()
+            insert_query = "INSERT INTO tblStudents (FirstName, ContactInfo) VALUES (?, ?)"
+            cursor.execute(insert_query, new_stu)
+            stu_id = cursor.lastrowid
+            notes =  notes_entry.get(1.0,END)
+            surname = sur_name_entry.get()
             if notes != '':
-                updateQuery = f"UPDATE tblStudents SET Notes = '{notes}' WHERE StudentID = {stuId}"
-                cursor.execute(updateQuery)
+                update_query = f"UPDATE tblStudents SET Notes = '{notes}' WHERE StudentID = {stu_id}"
+                cursor.execute(update_query)
             if surname != '':
-                updateQuery = f"UPDATE tblStudents SET LastName = '{surname}' WHERE StudentID = {stuId}"
-                cursor.execute(updateQuery)
+                update_query = f"UPDATE tblStudents SET LastName = '{surname}' WHERE StudentID = {stu_id}"
+                cursor.execute(update_query)
             connection.commit()
-            dialogue(f"StudentID = {stuId}\nRecord saved.")
+            dialogue(f"StudentID = {stu_id}\nRecord saved.")
         except:
             dialogue("Error updating student records.\n Please try again.")
-def stuAdd():                             
-    newScreen(recordEdit,"ADD STUDENT RECORD", icon2)
-    createStuView()
-    makeCommitBtn(leftFrame, stuAddCommit)
+def stu_add():                             
+    new_screen(record_edit,"ADD STUDENT RECORD", icon2)
+    create_stu_view()
+    make_commit_btn(left_frame, stu_add_commit)
 
-def stuEditCCommit():
-    IDChoice = confirmIDSelect()
-    if IDChoice:
-        selectQuery = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {IDChoice}"
-        cursor.execute(selectQuery)
+def stu_edit_c_commit():
+    id_choice = confirm_id_select()
+    if id_choice:
+        select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {id_choice}"
+        cursor.execute(select_query)
         results = cursor.fetchall()[0]
-        stuEdit(IDChoice, results)
-def stuEditChoice(): 
-    newScreen(recordEdit,"EDIT STUDENT RECORD", icon2, True, "hidden")                
-    makeCommitBtn(leftFrame, stuEditCCommit)
-    createChoice()
+        stu_edit(id_choice, results)
+def stu_edit_choice(): 
+    new_screen(record_edit,"EDIT STUDENT RECORD", icon2, True, "hidden")                
+    make_commit_btn(left_frame, stu_edit_c_commit)
+    create_choice()
 
-def stuEditCommit():
-    IDChoice = int(stuIdEntry.get())
-    newStu = (foreNameEntry.get(), surNameEntry.get(), contactEntry.get(), notesEntry.get(1.0, END))
-    if newStu[0] == '' or newStu[3] =='':
+def stu_edit_commit():
+    id_choice = int(stu_id_entry.get())
+    new_stu = (fore_name_entry.get(), sur_name_entry.get(), contact_entry.get(), notes_entry.get(1.0, END))
+    if new_stu[0] == '' or new_stu[3] =='':
         dialogue("Please fill in all necessary fields marked *")
     else:
-        confirmChange("Are you sure you want to\nchange this record?")
+        confirm_change("Are you sure you want to\nchange this record?")
         if confirm == True:
             try:
-                updateQuery = f"UPDATE tblStudents SET FirstName = ?, LastName = ?, ContactInfo = ?, Notes = ?  WHERE StudentID = {IDChoice}"
-                cursor.execute(updateQuery, newStu)
+                update_query = f"UPDATE tblStudents SET FirstName = ?, LastName = ?, ContactInfo = ?, Notes = ?  WHERE StudentID = {id_choice}"
+                cursor.execute(update_query, new_stu)
                 connection.commit()
-                dialogue(f"StudentID = {IDChoice}\nRecord updated.")
+                dialogue(f"StudentID = {id_choice}\nRecord updated.")
             except:
                 dialogue("Error updating student records.\n Please try again.")
         else:
             dialogue("Update canceled.")
-def stuEdit(IDChoice, values):    
-    newScreen(stuEditChoice,"EDIT STUDENT RECORD", icon2)
-    createStuView()
-    stuIdEntry.configure(state='normal')
-    stuIdEntry.insert(0, IDChoice)
-    stuIdEntry.configure(state='readonly')
-    entryWidgets = (foreNameEntry,surNameEntry,contactEntry,notesEntry)
-    for i in range(len(entryWidgets)):
+def stu_edit(id_choice, values):    
+    new_screen(stu_edit_choice,"EDIT STUDENT RECORD", icon2)
+    create_stu_view()
+    stu_id_entry.configure(state='normal')
+    stu_id_entry.insert(0, id_choice)
+    stu_id_entry.configure(state='readonly')
+    entry_widgets = (fore_name_entry,sur_name_entry,contact_entry, notes_entry)
+    for i in range(len(entry_widgets)):
         if values[i] != None:
             try:
-                entryWidgets[i].insert(0, values[i])
+                entry_widgets[i].insert(0, values[i])
             except:
-                entryWidgets[i].insert(1.0, values[i])
-    makeCommitBtn(rightFrame, stuEditCommit)
+                entry_widgets[i].insert(1.0, values[i])
+    make_commit_btn(right_frame, stu_edit_commit)
 
-def stuRemoveCommit():
-    IDChoice = confirmIDSelect()
-    if IDChoice:
-        confirmChange("Are you sure you want to\ndelete this record?")
+def stu_remove_commit():
+    id_choice = confirm_id_select()
+    if id_choice:
+        confirm_change("Are you sure you want to\ndelete this record?")
         if confirm == True:
             try:
-                deleteQuery = "DELETE FROM tblStudents WHERE StudentID = ?"
-                connection.commit(deleteQuery,(IDChoice,))
-                dialogue(f"Record for student {IDChoice} deleted.")
+                delete_query = "DELETE FROM tblStudents WHERE StudentID = ?"
+                connection.commit(delete_query,(id_choice,))
+                dialogue(f"Record for student {id_choice} deleted.")
             except:
                 dialogue("Error updating student records.\n Please try again.")
         else:
             dialogue("Deletion canceled.")
-def stuRemove():
-    newScreen(recordEdit, "DELETE STUDENT RECORD", icon2, True, "hidden")
-    makeCommitBtn(leftFrame, stuRemoveCommit)
-    createChoice()
+def stu_remove():
+    new_screen(record_edit, "DELETE STUDENT RECORD", icon2, True, "hidden")
+    make_commit_btn(left_frame,  stu_remove_commit)
+    create_choice()
 
-def confirmIDSelect(chooseItem='stu'):
-    if chooseItem == 'ex':
+def confirm_id_select(choose_item='stu'):
+    if choose_item == 'ex':
         item = "Exercise"
     else:
         item = "Student"
-    IDChoice = IDEntry.get()
+    id_choice = id_entry.get()
     try:
-        IDChoice = int(IDChoice)
-        selectQuery = f"SELECT {item}ID FROM tbl{item}s"
-        cursor.execute(selectQuery)
+        id_choice = int(id_choice)
+        select_query = f"SELECT {item}ID FROM tbl{item}s"
+        cursor.execute(select_query)
         results = cursor.fetchall()
-        if (IDChoice,) in results:
-            return IDChoice
+        if (id_choice,) in results:
+            return id_choice
         else:
             raise Exception
     except:
-        dialogue(f"Error: The selected ID {IDChoice} is invalid.")
+        dialogue(f"Error: The selected ID {id_choice} is invalid.")
         return None
 
-def onIdSelect(event):
+def on_id_select(event):
     try:
-        selectedId = scrllID.get(scrllID.curselection()).split(">")[0][1:]
-        IDEntry.delete(0, END)
-        IDEntry.insert(0, selectedId)
+        selected_id = scrll_id.get(scrll_id.curselection()).split(">")[0][1:]
+        id_entry.delete(0, END)
+        id_entry.insert(0, selected_id)
     except:
         pass
-def createChoice(chooseItem='stu'):
-    global IDEntry, scrllID
-    if chooseItem=='ex':
+def create_choice(choose_item='stu'):
+    global id_entry, scrll_id
+    if choose_item=='ex':
         fields = ("ExerciseID", "Date")
-        columnNames = [row[1] for row in critColumnInfo]
-        exString = (', c.'+', c.'.join(columnNames)," LEFT JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
+        column_names = [row[1] for row in crit_column_info]
+        ex_string = (', c.'+', c.'.join(column_names)," LEFT JOIN tblCriteria c ON main.CriteriaID = c.CriteriaID")
     else:
         fields= ("StudentID", "FirstName", "LastName")
-        exString = ('','')
+        ex_string = ('','')
     label = fields[0][0:fields[0].find("ID")]
-    labelBox(f"ENTER {label} ID", 0.31, leftFrame)
-    IDEntry = ctk.CTkEntry(leftFrame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-    IDEntry.place(relx=0.25, rely=0.38)
-    scrllID = Listbox(root, bg=bgCol1, font=('Arial', 14), relief=FLAT)
-    scroller = ctk.CTkScrollbar(scrllID, orientation='vertical', command=scrllID.yview)
-    scrllID.config(yscrollcommand=scroller.set)
-    scrllID.place(relx=1.0, relwidth=0.5, relheight=1.0, anchor=NE)
+    label_box(f"ENTER {label} ID", 0.31, left_frame)
+    id_entry = ctk.CTk_entry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
+    id_entry.place(relx=0.25, rely=0.38)
+    scrll_id = Listbox(root, bg=bg_col1, font=('Arial', 14), relief=FLAT)
+    scroller = ctk.CTkScrollbar(scrll_id, orientation='vertical', command=scrll_id.yview)
+    scrll_id.config(yscrollcommand=scroller.set)
+    scrll_id.place(relx=1.0, relwidth=0.5, relheight=1.0, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
 
-    selectQuery = f"SELECT main.{', main.'.join(fields)}{exString[0]} FROM tbl{label}s main{exString[1]}"
-    cursor.execute(selectQuery)
+    select_query = f"SELECT main.{', main.'.join(fields)}{ex_string[0]} FROM tbl{label}s main{ex_string[1]}"
+    cursor.execute(select_query)
     results = cursor.fetchall()
     if len(results) == 0:
-        scrllID.config(font=('Arial', 20))
-        scrllID.insert(0, f"NO {label.upper()}S AVAILABLE")
-        IDEntry.configure(state='readonly')
-        commitBtn.config(state='disabled')
+        scrll_id.config(font=('Arial', 20))
+        scrll_id.insert(0, f"NO {label.upper()}S AVAILABLE")
+        id_entry.configure(state='readonly')
+        commit_btn.config(state='disabled')
     else:
-        scrllID.bind('<<ListboxSelect>>', onIdSelect)
-        resultsList = []
+        scrll_id.bind('<<ListboxSelect>>', on_id_select)
+        results_list = []
         for row in range(len(results)):
-            resultsList.append([])
+            results_list.append([])
             for field in range(len(results[0])):
                 if field<2:
-                    resultsList[row].append(str(results[row][field]))
+                    results_list[row].append(str(results[row][field]))
                 else:
-                    if chooseItem =='stu':
+                    if choose_item =='stu':
                         if results[row][field] != None:
-                            resultsList[row].append(results[row][field])     
+                            results_list[row].append(results[row][field])     
                         break                                       #breaks after 3 items of a student's data
                     elif results[row][field] != 0 and results[row][field] == 1:
-                        resultsList[row].append(columnNames[field-2])
+                        results_list[row].append(column_names[field-2])
                     elif results[row][field] != 0 and results[row][field]: 
-                        resultsList[row].append(columnNames[field-2]+' '+results[row][field])
+                        results_list[row].append(column_names[field-2]+' '+results[row][field])
                     else:
                         break                                       #breaks if no criteria
-        for row in resultsList:
+        for row in results_list:
             item = '<'+row[0]+'> '+"  ".join(row[1:])
-            scrllID.insert(END, item)
+            scrll_id.insert(END, item)
 
 
-def setConnections():
+def set_connections():
     global connection,cursor,dictionary
     try:
         connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
         cursor = connection.cursor()
     except:
-        errMessg = f"Error: Student database {DATABASENAME}.db not found\nClick confirm to create new database"
-        confirmChange(errMessg,False)
+        err_messg = f"Error: Student database {DATABASENAME}.db not found\nClick confirm to create new database"
+        confirm_change( err_messg,False)
         if confirm == True:
-            sqlMessg = DatabaseCreator.create_database()
-            if sqlMessg:
-                errMessg = f"Error: Unable to create student database.\n{sqlMessg}"
-                error(errMessg)
+            sql_messg = DatabaseCreator.create_database()
+            if sql_messg:
+                err_messg = f"Error: Unable to create student database.\n{sql_messg}"
+                error( err_messg)
             else:
                 connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
                 cursor = connection.cursor()
@@ -556,38 +556,38 @@ def setConnections():
             error("Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
     finally:
         if connection:
-            global critColumnInfo
+            global crit_column_info
             cursor.execute("PRAGMA table_info(tblCriteria)")
-            critColumnInfo = cursor.fetchall()[1:]
+            crit_column_info = cursor.fetchall()[1:]
     try:
         with open(DICTFILE+".json","r+") as file:
             dictionary = json.load(file)
             pass
     except:
-        errMessg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new dictionary.\nSome data may be missing"
-        confirmChange(errMessg,False)
+        err_messg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new dictionary.\nSome data may be missing"
+        confirm_change( err_messg,False)
         if confirm == True:
-            fileMessg = DatabaseCreator.create_dictionary()
-            if fileMessg:
-                errMessg = f"Error: Unable to create dictionary file.\n{fileMessg}"
-                error(errMessg)
+            file_messg = DatabaseCreator.create_dictionary()
+            if file_messg:
+                err_messg = f"Error: Unable to create dictionary file.\n{file_messg}"
+                error( err_messg)
         else:
             error("Error: Unable to access dictionary.\nCheck directories for {DICTFILE}.json")
 
-bgCol1 = '#f5f5f5'
-bgCol2 = '#4a4a7a'
+bg_col1 = '#f5f5f5'
+bg_col2 = '#4a4a7a'
 global back
 back = [True, home]
 today = datetime.datetime.today().strftime('%Y-%m-%d')
 
-setConnections()
+set_connections()
 root = Tk()
 root.geometry('800x600')
 root.title("Language Analysis Nurturing Grammar")
-icon1 = setIcon(LOGO)
-icon2 = setIcon(BACKICON)
-icon3 = setIcon(LOGO)           # <<<<<<< this should be a unique icon 'finish'
-bgCanvas()
-createHome()
+icon1 = set_icon(LOGO)
+icon2 = set_icon(BACKICON)
+icon3 = set_icon(LOGO)           # <<<<<<< this should be a unique icon 'finish'
+bg_canvas()
+create_home()
 home() 
 root.mainloop()

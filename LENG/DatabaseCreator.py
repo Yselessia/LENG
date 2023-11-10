@@ -20,7 +20,7 @@ import json
 import sqlite3
 
 def add_word(line):
-    global dictionary, duplikey
+    global dictionary, dupli_key
     wordend= line.find(" ")
     word= line[:wordend].replace("\n","")
     pos= line[wordend+1:].replace("\n","").replace(".","")
@@ -36,19 +36,19 @@ def add_word(line):
                 if posdata == altvalue:
                     cancelledadd = True    #in this case, the word form is already in the dictionary
             if cancelledadd == False:      #if it is not, it can be added
-                origvalue.append(duplikey)
+                origvalue.append(dupli_key)
                 dictionary.update({word:origvalue})
         elif posdata != origvalue:          #this deals with moving the original value in the dictionary
-            dictionary.update({word:[duplikey,(duplikey+1)]}) 
-            dictionary[duplikey] = origvalue
-            duplikey +=1
+            dictionary.update({word:[dupli_key,(dupli_key+1)]}) 
+            dictionary[dupli_key] = origvalue
+            dupli_key +=1
         else:
             cancelledadd = True             #here the original value is the form in the dictionary
         if cancelledadd == False:           #if a new value is being added, it is done here, and the duplicate key is also incremented. 
-            dictionary[duplikey] = posdata
-            duplikey +=1
+            dictionary[dupli_key] = posdata
+            dupli_key +=1
 
-def clean5000(f):           
+def clean_5000(f):           
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
         x = line.count(",")
@@ -69,7 +69,7 @@ def clean5000(f):
             prevline = line
         add_word(line)
 
-def clean3000(f):   
+def clean_3000(f):   
     delete = False
     line = 0
     pos = "####"    #pos must be initialised with a value so that the first word can be saved.
@@ -105,9 +105,9 @@ def clean3000(f):
         line = line + 1
 
 def create_dictionary():
-    global dictionary, duplikey
+    global dictionary, dupli_key
     dictionary={}
-    duplikey=0
+    dupli_key=0
     #here True is used to signal that there is data in value[2], although the words are not irregular
     dictionary["a"] = ["article", True, "indefinite"]
     dictionary["an"] = ["article", True, "indefinite"]
@@ -115,28 +115,28 @@ def create_dictionary():
     dictionary["she"] = ["pron", True, "they"]          #how do plural :(
     dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
     try:
-        currentFile = FILE1
+        current_file = FILE1
         with open(FILE1+".txt","r") as file:                #opens file
             f= file.read()
             f= re.split(" |\n",f)                           #copy of file => list of lines
             f= [item.lower() for item in f]
-        clean3000(f)
+        clean_3000(f)
 
-        currentFile = FILENAME
+        current_file = FILENAME
         with open(FILENAME+".txt","r") as file:             #opens file
             f= file.read()
             f= re.split("1|2",f)                            #copy of file => list of lines
             f= [item.lower() for item in f]
-        clean5000(f)
+        clean_5000(f)
 
-        currentFile = FILEIRREGV
+        current_file = FILEIRREGV
         with open(FILEIRREGV+".txt","r") as file:          #verbs
             f= file.read()
             f= re.sub(" /.+/|\n	\n","",f)
             f= f.split("\n")
             f= [item.lower() for item in f]
 
-        currentFile = WRITABLEFILE
+        current_file = WRITABLEFILE
         with open(WRITABLEFILE+".txt","w") as file:
             x= 0
             for line in f:
@@ -147,7 +147,7 @@ def create_dictionary():
                         file.write(":")                         #verb end eg ":read read reading :"
                         x = 0
         
-        currentFile = "error.."
+        current_file = "error.."
         with open(WRITABLEFILE+".txt","r") as file:
             f= file.read()
             f= f.split(":")
@@ -187,7 +187,7 @@ def create_dictionary():
         dictionary[key]= data                       #>You can check for it by looking at the length of the irregforms array>
                                                     #>or deal with it entirely separately!
 
-        currentFile = FILEIRREGN
+        current_file = FILEIRREGN
         with open(FILEIRREGN+".txt","r") as file:            #nouns
             f= file.read()
             f= f.split("\n")
@@ -212,7 +212,7 @@ def create_dictionary():
                         data.append(plural)
                         dictionary[key]= data
 
-        currentFile = FILEIRREGA
+        current_file = FILEIRREGA
         with open(FILEIRREGA+".txt","r") as file:
             f = file.read()
             f = f.split("\n")
@@ -248,7 +248,7 @@ def create_dictionary():
                     dictionary[key]= data
 
     except:
-        return f"{currentFile}.txt not found"
+        return f"{current_file}.txt not found"
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
