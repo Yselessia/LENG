@@ -14,7 +14,7 @@ import datetime
 import customtkinter as ctk                    #imports the ctk module
 from tkinter import *
 from PIL import ImageTk,Image
-import DatabaseCreator
+import DatastoreCreator
 import SentenceAnalysis
 
 class ResizingCanvas(Canvas):                 
@@ -545,7 +545,7 @@ def set_connections():
         err_messg = f"Error: Student database {DATABASENAME}.db not found\nClick confirm to create new database"
         confirm_change( err_messg,False)
         if confirm == True:
-            sql_messg = DatabaseCreator.create_database()
+            sql_messg = DatastoreCreator.create_database()
             if sql_messg:
                 err_messg = f"Error: Unable to create student database.\n{sql_messg}"
                 error( err_messg)
@@ -567,7 +567,7 @@ def set_connections():
         err_messg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new dictionary.\nSome data may be missing"
         confirm_change( err_messg,False)
         if confirm == True:
-            file_messg = DatabaseCreator.create_dictionary()
+            file_messg = DatastoreCreator.create_dictionary()
             if file_messg:
                 err_messg = f"Error: Unable to create dictionary file.\n{file_messg}"
                 error( err_messg)
