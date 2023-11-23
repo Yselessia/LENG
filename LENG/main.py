@@ -180,10 +180,12 @@ def add_sentence_commit():
     x = sentence.replace(' ','')
     if id_choice and x != '':
         global ex_id
-        x = SentenceAnalysis.clean_sentence(sentence)
+        SentenceAnalysis.main_algorithm(sentence)
+        #should return data
+
             
 
-def add_sentence():
+def add_sentence(all_patterns):
     global sentence_entry
     new_screen(home, "CREATE EXERCISE", icon3, True)
     #make_commit_btn(left_frame, add_sentence_commit, "ADD NEW") <<< this should be in the top corner
@@ -219,7 +221,8 @@ def ex_create_commit():
                 #cursor.execute(update_query)
             connection.commit()
             dialogue(f"ExerciseID = {ex_id}\nExercise saved.")
-            add_sentence()
+            all_patterns = SentenceAnalysis.compile_all_patterns()
+            add_sentence(all_patterns)
         except:
             dialogue("Error saving exercise.\n Please try again.")
 def ex_create():

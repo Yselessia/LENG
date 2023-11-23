@@ -4,6 +4,7 @@ spell = SpellChecker()
 CONSONANT= '[a-z&&[^aeiou]]'
 VOWEL = '[aeiou]'
 CAPITALS = '[A-Z]'
+PUNCTUATION = '[?:,.!\'"]'
 DUPLI = 0
             #note: add separate infinitive check within sentence class
             #note: add plural check to the datastore creator
@@ -57,13 +58,28 @@ class Verb(Word):
         self.pos = "v"
         self.tense  = str()
         self.person = self._Person()
+
     class _Person():
         def __init__(self):
             self.plural = tuple()
             self.singular = tuple()
+        @property
+        def person(self):
+            person = [i for i in range(1,4) if i in self.plural or i in self.singular]
+            return person   #returns persons as a list *not* differentiated by plural
         def all(self):
             self.plural = 1,2,3
             self.singular = 1,2,3
+        
+        #these set the plural + singular attributes without the need to remember trailing commas within the main code
+        def p(self,t):
+            if type(t) == int:
+                t = t,
+            self.plural = t
+        def s(self,t):
+            if type(t) == int:
+                t = t,
+            self.singular = t
 
 class Adjective(Word):
     def __init__(self, word_object):
@@ -107,6 +123,18 @@ class Sentence(list):
             return self[verb_index[num]]
         except (IndexError, TypeError):
             return None
+    @property
+    def dupli_index_key(self):
+        length_key = []
+        i = 0
+        while i < len(self):
+            if self[i].id:
+                length_key.append(self[i].id)
+                i = i + len(self[i].id) + 1
+            else:
+                length_key.append([i])
+                i = i + 1
+        return length_key
     
     def set_num(self, num):
         self.__num = num
@@ -123,32 +151,31 @@ class Sentence(list):
     def get_dupli(self, index):
         id = self[index].id
         index_list = []
+        copies_bool = False
         if id:
             for index in range(len(self)):
                 if self[index].id == id:
                     index_list.append(index)
-        return index_list
+        if len(index_list) > 0:
+            copies_bool = True
+        return copies_bool, index_list
 
-
-
-def set_connections():
-    DICTFILE = 'testdictionary'
-    import json
-    global dictionary
-    try:
-        with open(DICTFILE+".json","r+") as file:
-            dictionary = json.load(file)
-            pass
-    except:
-        err_messg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
-        print(err_messg)
+def compile_all_patterns():     #<<<< fix th eorder of these
+    all_patterns = [(r'\bdet\b', r'\bdet\b\s+(adj|n)' ,'determinerMatch'),
+                    (r'\badj\b', r'\badj\b\s+(adj|n)' ,'adjectiveMatch'),
+                    (r'\badv\b', r'\badv\b\s+(v|adv)' ,'adverbMatch'),
+                    (r'\bv\b', r'\b(v\s+){2,}v\b', 'verbRepetition'),
+                    (r'v\b', r'n\b.*\bv\b', 'verbSubject'),
+                    (r'pron|n', r'\b(?:n|pron)\s(?!pron|n)', 'nounRepetition')]
+    return [(re.compile(pattern[0]), re.compile(pattern[1]), pattern[2]) for pattern in all_patterns]
 
 def clean_sentence(sentence):
     #in this, each word, number, punctuation mark, is separated by a space.
     cleaned_sentence = re.sub(r'([^a-zA-Z\']+)', r' \1 ', sentence)
     cleaned_sentence_words = re.sub(r'[^a-zA-Z\']+', ' ', sentence)
     # Split the cleaned sentence into words
-    return cleaned_sentence_words.split(), cleaned_sentence
+    cleaned_punctuated = [[item, True] if re.match(PUNCTUATION, item) else [item, False] for item in cleaned_sentence.split()]
+    return cleaned_sentence_words.split(), cleaned_punctuated
 
 def call_lemma(word):
     lemma = [None]
@@ -209,28 +236,31 @@ def call_lemma(word):
             lemma[i] = [lemma[i], form, pos]
     return lemma                            #returns an array holding all valid options for the root word
 
-def add_word(word):
+def add_word(orig_word):
     global DUPLI
-    word = spell.correction(word.lower())
+    word = spell.correction(orig_word.lower())
+    if word != orig_word.lower():
+        spell_error = True
     word = Word(word)
     word_data = dictionary.get(word.word)
-    print(word_data)
+    dialogue(word_data)
     word_copies = find_word(word, word_data)
-    print("L",word_copies)
+    dialogue("L",word_copies)
     for i in word_copies:
-        print("F",i,i.word,i.get_key,i.pos)
+        dialogue("F",i,i.word,i.get_key,i.pos)
     if len(word_copies) > 1:            #the DUPLI flag _dupli represents when a word in the sentence is a copy of another
         DUPLI = DUPLI + 1               #it is a unique number for each (word_copies)
     if len(word_copies) >= 1:
         for item in word_copies:
             new_sen_list.append(item)
     else:
-        print("Word not found")
+        dialogue("Word not found")
         new_sen_list.append(None)
+    return spell_error, word.word
 
 def find_word(word, word_data):
     word_duplicates = []
-    print(">",word.word, word.get_key, word_data)
+    dialogue(">",word.word, word.get_key, word_data)
     #the first option is that the word is a root word, so a key in the dictionary
     if word_data:
         word.id
@@ -238,7 +268,7 @@ def find_word(word, word_data):
             for i in range(len(word_data)):
                 word_duplicates.append(word.make_dupli())
                 word_duplicates[i].set_key(word_data[i])
-                word_duplicates[i].pos = dictionary.get(word_data[i])        else:
+                word_duplicates[i].pos = dictionary.get(word_data[i])
             word_duplicates.append(word)
         for i in range(len(word_duplicates)):
             word = word_duplicates[i]
@@ -255,8 +285,8 @@ def find_word(word, word_data):
                         word.person.all()
                     else:
                         word.tense = "present"
-                        word.person.singular = 1,2
-                        word.person.plural = 1,2,3
+                        word.person.s(1,2)
+                        word.person.p(1,2,3)
                 case "adj":
                     word = Adjective(word)
                     word.form = "positive"
@@ -289,7 +319,7 @@ def find_word(word, word_data):
                         if len(item[2]) == 4:
                             if word == item[2][1]:
                                 word.tense = "present"
-                                word.person.singular = 3
+                                word.person.s(3)
                                 word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                             elif word == item[2][2]:
                                 word.tense = "past"
@@ -302,21 +332,21 @@ def find_word(word, word_data):
                         elif len(item[2]) > 4:
                             if word == item[2][2]:
                                 word.tense = "past"
-                                word.person.singular = 2
-                                word.person.plural = 1,2,3
+                                word.person.s(2)
+                                word.person.p(1,2,3)
                                 word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                             elif word == item[2][5]:
                                 word.tense = "present"
-                                word.person.singular = 2
-                                word.person.plural = 1,2,3
+                                word.person.s(2)
+                                word.person.p(1,2,3)
                                 word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                             elif word == item[2][0]:
                                 word.tense = "present"
-                                word.person.singular = 1
+                                word.person.s(1)
                                 word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                             elif word == item[2][4]:
                                 word.tense = "past"
-                                word.person.singular = 1,3
+                                word.person.s(1,3)
                                 word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                         #0"am" - Present first person singular 
                         #2"were" - Past second person singular and all persons plural
@@ -329,7 +359,7 @@ def find_word(word, word_data):
             word_data = []
             for i in range(len(lemma_var)):
                 form = lemma_var[i]
-                print(form)
+                dialogue(form)
                 lemma_data = dictionary.get(lemma_var[i][0])
                 pos = []
                 key_temp = []
@@ -342,7 +372,7 @@ def find_word(word, word_data):
                         word, word_duplicates, single = append_dupli(word, word_duplicates, single)
                         word = Verb(word)
                         word.tense = form[colon+1:len(word)-1]  #form = "plural:present3"
-                        word.person.singular = int(form[len(word)]) #here, 3 - always in last char
+                        word.person.s(int(form[len(word)])) #here, 3 - always in last char
                     else:
                         for i in lemma_data:
                             pos.append(dictionary(i)[0])
@@ -393,22 +423,209 @@ def append_dupli(word, word_duplicates, single):
     return word, word_duplicates, single
 
 
+def pos_clean_sva(sentence, punctuated_sen,punctuated_index_key):  #sentence in this function is new_sen_list
+    verb_list = [item for item in sentence.get_verb]
+    #false represents that the verb has no possible variations.
+    if len(verb_list) > 1:
+        #this ????????? checks if there r diff clauses in the sentence
+        comma = []
+        comma_index = 0
+        while "," in [i[0] for i in punctuated_sen]:
+            #the position of the comma in the unsearched portion of the sentence
+            comma_index =  [i[0] for i in punctuated_sen][comma_index:].index(",") 
+            for i, sublist in enumerate(punctuated_index_key):
+                if comma_index in sublist:
+                    comma.append(i)
+        #if there is a comma in the sentence: - unfinished - creates <clause_sen> + changes sentence
+        if comma:
+            match len(comma):
+                case 1:
+                    pass
+                case 2:
+                    # list[index] = a,b,c where index is representative of the actual no. of words in the submitted sentence
+                    clause_full_index = sentence.dupli_index_key[comma[0]:comma[1]]
+                    #here it is a list (of lists) of indexes of words in the clause
+                    #next it is narrowed down to just the start and end indexes
+                    clause_full_index = [clause_full_index[0], clause_full_index[len(clause_full_index)]]
+                    #clause contains 
+                    clause = sentence[clause_full_index[0], clause_full_index[1]]
+                    clause.pos = "n"
+                    clause_rep = Noun(Word("<>", None)) #a custom word to represent the clause
+                    clause_sen = sentence[clause_full_index[0]:clause_full_index[1]]
+                    sentence = sentence[:clause_full_index[0]] + [clause_rep] + sentence[clause_full_index[1] +1:]
+                    verb_list = [item for item in sentence.get_verb]
+                case _:
+                    pass
+        #this checks if some of the verbs are actually nouns or something idk
+        verb_definite = []
+        for i in verb_list:
+            if sentence.get_dupli(i)[0] == False:
+                verb_definite.append(verb_list[i])
 
-set_connections()
-#here we split the sentence into a list of words
-sentence = input("Please enter a sentence: ")
-new_sen_list = Sentence()
-if sentence != "":
-    words, x = clean_sentence(sentence)
+    if (verb_definite and len(verb_definite) == 1) or len(verb_list) == 1:
+        if verb_definite:
+            verb_list = verb_definite
+    #add to conditional <<<<<
+    if clause:
+        subject_verb_error(clause)
+    subject_verb_error(sentence)
+
+def subject_verb_error(sentence):
+    global all_patterns
+    pos_list = " "
+    for i in sentence:
+        pos_list = pos_list + str(i.pos) + " "
+    order_error = []
+    for j in all_patterns:
+        if j[0].findall(pos_list):   
+            if j[2] == 'nounRepetition':
+                if len(j[1].findall(pos_list)) < len(j[0].findall(pos_list)):
+                    order_error.append(j[2])
+                    #this filters the iterable into just the items which are in j[0] but not j[1]
+                    position_of_error = [(item.start(), item.end()) for item in j[0].finditer(pos_list) 
+                                         if (item.start(), item.end()) not in [(match.start(), match.end()) 
+                                                                               for match in j[1].finditer(pos_list)]]
+                    new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
+                    
+            elif j[2] == 'verbRepetition':
+                if j[1].findall(i):
+                    order_error.append(j[2])
+                    position_of_error = [(item.start(), item.end()) for item in j[1].finditer(pos_list)]
+                    new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
+
+            elif not j[1].findall(pos_list):
+                order_error.append(j[2])
+                position_of_error = []      # <<<<<<<< fix this !!!!!!!!!!!!
+                new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
+
+def correct_sva(err_id, sentence, err_positions, pos_list):
+    for err_pos_obj in err_positions:
+        #this finds the index of the error in the Sentence obj
+        err_pos = pos_list[:err_pos_obj[0]].count(" ") - 1
+        match err_id:
+            case 'determinerMatch':
+                if sentence[err_pos-1].pos == "n":
+                    if sentence[err_pos-2] != "det":
+                        temp_word = sentence[err_pos-1]
+                        sentence[err_pos-1 ] = sentence[err_pos]
+                        sentence[err_pos] = temp_word
+                    else:
+                        del sentence[err_pos]
+                else:
+                    for i in range(len(sentence.get_verb)):
+                        if i > err_pos:
+                            break
+                    this_verb = sentence[sentence.get_verb[i]]
+                    if 3 in this_verb.person.person:
+                        if 3 in this_verb.person.singular:
+                            new_word = Pronoun(Word("it"))      # <<< ADD PERSONIFICTAION FLAG TO DICT
+                            new_word.plural = False
+                        else:
+                            new_word = Pronoun(Word("they"))
+                            new_word.plural = True
+                        new_word.person = 3
+                    elif 2 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
+                        new_word = Pronoun(Word("you")) 
+                        if 2 in this_verb.person.singular:  
+                            new_word.plural = False
+                        else:
+                            new_word.plural = True  
+                        new_word.person = 2
+                    elif 1 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
+                        if 1 in this_verb.person.singular:
+                            new_word = Pronoun(Word("i"))
+                            new_word.plural = False
+                        else:
+                            new_word = Pronoun(Word("we"))
+                            new_word.plural = True
+                        new_word.person = 1
+                    new_word.pos = "pron"
+                    sentence[err_pos] = new_word
+            case 'adjectiveMatch':
+                if sentence[err_pos-1].pos == "n":
+                    temp_word = sentence[err_pos-1]
+                    sentence[err_pos-1 ] = sentence[err_pos]
+                    sentence[err_pos] = temp_word
+                else:
+                    del sentence[err_pos]
+            case 'adverbMatch':
+                if sentence[err_pos-1].pos == "v":
+                    temp_word = sentence[err_pos-1]
+                    sentence[err_pos-1 ] = sentence[err_pos]
+                    sentence[err_pos] = temp_word
+                else:
+                    del sentence[err_pos]
+            case 'verbSubject':
+                pass
+            case 'verbRepetition':
+                pass
+            case 'nounRepetition':
+                pass
+            case _:
+                dialogue("lol help")
+        
+        
+        
+            
+
+#[element for sublist in clause for element in sublist]
+
+def main_algorithm(sentence):
+    global new_sen_list
+    new_sen_list = Sentence()
+    spell_error_count = 0
+    words, punctuated_sen = clean_sentence(sentence)
     for word in words:
-        add_word(word)
+        spell_error, new_word = add_word(word)
+        if spell_error == True:
+            spell_error_count = spell_error_count + 1
+            #this corrects the spelling of the word in the punctuated list of the sentence so that it can be found later
+            index_of_word = [item[0] for item in punctuated_sen].index(word)
+            punctuated_sen[index_of_word][0] = new_word
+
+    #this creates a key for referencing the position of punctuation in the sentence (combined with .dupli_index_key)
+    # list[index] = a,b,c where index is representative of the actual no. of words in the submitted sentence
+    punctuated_index_key = [[] for i in range(len(words))]
+    j = 0
+    for i in range(len(punctuated_sen)):
+        if punctuated_sen[i][1] == True:
+            punctuated_index_key[j].append(i)
+        else:
+            j = j + 1
+
+    if len(new_sen_list) > 0:   #??
+        pos_clean_sva(new_sen_list, punctuated_sen, punctuated_index_key)
+
+
+
+
+#testing
+
+def set_connections():
+    DICTFILE = 'testdictionary'
+    import json
+    global dictionary
+    try:
+        with open(DICTFILE+".json","r+") as file:
+            dictionary = json.load(file)
+    except:
+        err_messg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
+        dialogue(err_messg)
+
+dialogue = print
+set_connections()
+all_patterns = compile_all_patterns()
+sentence = input("Please enter a sentence: ")
+if sentence != "":
+    main_algorithm(sentence)
 else:
     word = input()
     add_word(word)
-print(new_sen_list)
+
+dialogue(new_sen_list)
 sentence = ""
 for i in new_sen_list:
     if i:
-        print("THIS")
-        print(i.word) # sentence = sentence+str(i.word)
-print(sentence)
+        dialogue("THIS")
+        dialogue(i.word) # sentence = sentence+str(i.word)
+dialogue(sentence)

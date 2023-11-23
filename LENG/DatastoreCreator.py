@@ -24,6 +24,8 @@ def add_word(line):
     wordend= line.find(" ")
     word= line[:wordend].replace("\n","")
     pos= line[wordend+1:].replace("\n","").replace(".","")
+    if "(" in pos:
+        pos = pos[:pos.find(")")+1]
     posdata= [pos,False]
     if word not in dictionary:
         dictionary[word] = posdata
@@ -249,6 +251,14 @@ def create_dictionary():
 
     except:
         return f"{current_file}.txt not found"
+    
+    key_list = list(dictionary.keys())
+    value_list = list(dictionary.values())
+    pos_value = ["article","prep","adv","n","v","adj","det","pron","conj","exclam","modal","number"]
+    for i in value_list:
+        if i[0] not in pos_value:
+            dictionary.del(key_list[value_list.index(i)])
+    
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
