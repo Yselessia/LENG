@@ -467,109 +467,191 @@ def pos_clean_sva(sentence, punctuated_sen,punctuated_index_key):  #sentence in 
             verb_list = verb_definite
     #add to conditional <<<<<
     if clause:
-        subject_verb_error(clause)
-    subject_verb_error(sentence)
+        all_errors_list_1, clause = subject_verb_error(clause)
 
-def subject_verb_error(sentence):
+    all_errors_list, new_sentence = subject_verb_error(sentence)
+    if clause:
+        #adding the clause back into the sentence
+        new_sentence[clause_pos] = clause[0]
+        for word in clause:
+            new_sentence.insert(clause_pos+1, word)
+        #updating the number of errors
+        for i in range(len(all_errors_list)):
+            my_err = all_errors_list[i]
+            if my_err[0] in [i[0] for i in all_errors_list_1]:
+                err_count = my_err[1] + all_errors_list_1[all_errors_list_1.index[my_err]][1]
+                all_errors_list[i] = my_err[0], err_count
+        for i in range(len(all_errors_list_1)):
+            if all_errors_list_1[i][0] not in [i[0] for i in all_errors_list]:
+                all_errors_list.append(all_errors_list_1[i])
+    return all_errors_list, new_sentence
+
+def subject_verb_error(sentence, Continue=True):
     global all_patterns
     pos_list = " "
     for i in sentence:
         pos_list = pos_list + str(i.pos) + " "
-    order_error = []
+    all_errors = []
+    err_positions_list = []
     for j in all_patterns:
         if j[0].findall(pos_list):   
             if j[2] == 'nounRepetition':
                 if len(j[1].findall(pos_list)) < len(j[0].findall(pos_list)):
-                    order_error.append(j[2])
+                    all_errors.append(j[2])
                     #this filters the iterable into just the items which are in j[0] but not j[1]
                     position_of_error = [(item.start(), item.end()) for item in j[0].finditer(pos_list) 
                                          if (item.start(), item.end()) not in [(match.start(), match.end()) 
                                                                                for match in j[1].finditer(pos_list)]]
-                    new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
-                    
+                    err_positions_list.append(position_of_error)
+
             elif j[2] == 'verbRepetition':
                 if j[1].findall(i):
-                    order_error.append(j[2])
+                    all_errors.append(j[2])
                     position_of_error = [(item.start(), item.end()) for item in j[1].finditer(pos_list)]
-                    new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
-
+                    err_positions_list.append(position_of_error)
             elif not j[1].findall(pos_list):
-                order_error.append(j[2])
+                all_errors.append(j[2])
                 position_of_error = []      # <<<<<<<< fix this !!!!!!!!!!!!
-                new_ord = correct_sva(j[2], sentence,  position_of_error, pos_list)
+                err_positions_list.append(position_of_error)
+    if Continue:
+        all_errors_list, new_sentence = correct_sva(all_errors, err_positions_list, pos_list, sentence)
+        return all_errors_list, new_sentence
+    else:
+        return all_errors, err_positions_list, pos_list
 
-def correct_sva(err_id, sentence, err_positions, pos_list):
-    for err_pos_obj in err_positions:
-        #this finds the index of the error in the Sentence obj
-        err_pos = pos_list[:err_pos_obj[0]].count(" ") - 1
-        match err_id:
-            case 'determinerMatch':
-                if sentence[err_pos-1].pos == "n":
-                    if sentence[err_pos-2] != "det":
+#this function does a simple check to see if the correction was helpful
+def continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list):
+    if (all_errors[index] != new_errors[index]) or (len(new_err_pos[index]) < len(err_positions[index])):
+        all_errors, err_positions, pos_list = new_errors, new_err_pos, new_pos_list 
+        continue_true = True
+    else:
+        continue_true = False
+    return continue_true, all_errors, err_positions, pos_list
+
+def correct_sva(all_errors, err_positions, pos_list, sentence):
+    sentence_hold = sentence    #this stores the unchanged sentence for comparison
+    #and this holds the error type and number of that error before the sentence is corrected.
+    all_errors_hold = [(all_errors[i], len(err_positions[i])) for i in range(len(all_errors))]
+    index = 0
+    while all_errors:
+    	current_err = all_errors[index]
+        for err_pos_obj in err_positions[index]:
+            #this finds the index of the error in the Sentence obj
+            err_pos = pos_list[:err_pos_obj[0]].count(" ") - 1
+            match all_errors[index]:
+                case 'determinerMatch':
+                    if sentence[err_pos-1].pos == "n":
+                        if sentence[err_pos-2] != "det":
+                            temp_word = sentence[err_pos-1]
+                            sentence[err_pos-1 ] = sentence[err_pos]
+                            sentence[err_pos] = temp_word
+                            new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                            continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
+                        if continue_true == False:
+                            sentence = sentence_hold
+                            del sentence[err_pos]
+                            all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                    else:
+                        for i in range(len(sentence.get_verb)):
+                            if i > err_pos:
+                                break
+                        this_verb = sentence[sentence.get_verb[i]]
+                        if 3 in this_verb.person.person:
+                            if 3 in this_verb.person.singular:
+                                new_word = Pronoun(Word("it"))      # <<< ADD PERSONIFICTAION FLAG TO DICT
+                                new_word.plural = False
+                            else:
+                                new_word = Pronoun(Word("they"))
+                                new_word.plural = True
+                            new_word.person = 3
+                        elif 2 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
+                            new_word = Pronoun(Word("you")) 
+                            if 2 in this_verb.person.singular:  
+                                new_word.plural = False
+                            else:
+                                new_word.plural = True  
+                            new_word.person = 2
+                        elif 1 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
+                            if 1 in this_verb.person.singular:
+                                new_word = Pronoun(Word("i"))
+                                new_word.plural = False
+                            else:
+                                new_word = Pronoun(Word("we"))
+                                new_word.plural = True
+                            new_word.person = 1
+                        new_word.pos = "pron"
+                        sentence[err_pos] = new_word
+                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                case 'adjectiveMatch':
+                    if sentence[err_pos-1].pos == "n":
                         temp_word = sentence[err_pos-1]
                         sentence[err_pos-1 ] = sentence[err_pos]
                         sentence[err_pos] = temp_word
-                    else:
+                        new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                        continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
+                    if continue_true == False:
+                        sentence = sentence_hold
                         del sentence[err_pos]
-                else:
-                    for i in range(len(sentence.get_verb)):
+                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                case 'adverbMatch':
+                    if sentence[err_pos-1].pos == "v":
+                        temp_word = sentence[err_pos-1]
+                        sentence[err_pos-1 ] = sentence[err_pos]
+                        sentence[err_pos] = temp_word
+                        new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                        continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
+                    if continue_true == False:
+                        sentence = sentence_hold
+                        del sentence[err_pos]
+                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+
+                case 'verbSubject':
+                    pass    #temporary
+                case 'verbRepetition':
+                    err_pos_2 = pos_list[:err_pos_obj[1]].count(" ") - 1
+                    for i in range(len(sentence[err_pos:err_pos_2])):
+                        if sentence[i].get_key == "be" or sentence[i].get_key == "have":
+                            if not keep_index:
+                                keep_index = i,
+                            else:
+                                keep_index = keep_index,i
+                                break
+                    if keep_index:
+                        if keep_index[1]:
+                            del sentence[keep_index[1]]
+                        else: 
+                            del sentence[keep_index[0]+2:err_pos_2+1]
+                        del sentence[err_pos:keep_index[0]]
+                    else:
+                        del sentence[err_pos+1:err_pos_2]
+                    all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                case 'nounRepetition':
+                    err_pos_2 = pos_list[:err_pos_obj[1]].count(" ") - 1
+                    verb_list = sentence.get_verb
+                    for i in range(len(verb_list)):
                         if i > err_pos:
-                            break
-                    this_verb = sentence[sentence.get_verb[i]]
-                    if 3 in this_verb.person.person:
-                        if 3 in this_verb.person.singular:
-                            new_word = Pronoun(Word("it"))      # <<< ADD PERSONIFICTAION FLAG TO DICT
-                            new_word.plural = False
-                        else:
-                            new_word = Pronoun(Word("they"))
-                            new_word.plural = True
-                        new_word.person = 3
-                    elif 2 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
-                        new_word = Pronoun(Word("you")) 
-                        if 2 in this_verb.person.singular:  
-                            new_word.plural = False
-                        else:
-                            new_word.plural = True  
-                        new_word.person = 2
-                    elif 1 in this_verb.person.person:          # <<< ADD PERSONIFICTAION FLAG TO DICT
-                        if 1 in this_verb.person.singular:
-                            new_word = Pronoun(Word("i"))
-                            new_word.plural = False
-                        else:
-                            new_word = Pronoun(Word("we"))
-                            new_word.plural = True
-                        new_word.person = 1
-                    new_word.pos = "pron"
-                    sentence[err_pos] = new_word
-            case 'adjectiveMatch':
-                if sentence[err_pos-1].pos == "n":
-                    temp_word = sentence[err_pos-1]
-                    sentence[err_pos-1 ] = sentence[err_pos]
-                    sentence[err_pos] = temp_word
-                else:
-                    del sentence[err_pos]
-            case 'adverbMatch':
-                if sentence[err_pos-1].pos == "v":
-                    temp_word = sentence[err_pos-1]
-                    sentence[err_pos-1 ] = sentence[err_pos]
-                    sentence[err_pos] = temp_word
-                else:
-                    del sentence[err_pos]
-            case 'verbSubject':
-                pass
-            case 'verbRepetition':
-                pass
-            case 'nounRepetition':
-                pass
-            case _:
-                dialogue("lol help")
+                                verb_list = verb_list[i:]
+                                break
+                    if verb_list[0] > err_pos:
+                        #there are verbs after the noun repetition
+                        #try moving the noun after each verb.
+                        continue_true = False   #temporary
+                    if continue_true == False:
+                        sentence = sentence_hold
+                        del sentence[err_pos+1:err_pos_2]
+                    all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                case _:
+                    dialogue("lol help")
         
-        
+        if index < len(all_errors)-1:
+		    index = index + 1
+    	else:
+            index = 0
+    return all_errors_hold, sentence
         
             
 
-#[element for sublist in clause for element in sublist]
-
+#returns all_errors_list, sentence_new, spell_error_count
 def main_algorithm(sentence):
     global new_sen_list
     new_sen_list = Sentence()
@@ -594,13 +676,15 @@ def main_algorithm(sentence):
             j = j + 1
 
     if len(new_sen_list) > 0:   #??
-        pos_clean_sva(new_sen_list, punctuated_sen, punctuated_index_key)
+        all_errors_list, sentence = pos_clean_sva(new_sen_list, punctuated_sen, punctuated_index_key)
+        sentence_new = [word.word for word in sentence]
+    return all_errors_list, sentence_new, spell_error_count
 
 
 
 
 #testing
-
+'''
 def set_connections():
     DICTFILE = 'testdictionary'
     import json
@@ -629,3 +713,4 @@ for i in new_sen_list:
         dialogue("THIS")
         dialogue(i.word) # sentence = sentence+str(i.word)
 dialogue(sentence)
+'''
