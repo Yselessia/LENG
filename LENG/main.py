@@ -1,11 +1,3 @@
-DICTFILE = "dictionary"
-DATABASENAME = "lengdatabase"
-LOGO = "logo"
-DATABASENAME = "testdb"                 #test values
-DICTFILE = "testdictionary"
-LOGO = "logotest"
-BACKICON = "backarrow"
-
 import sys
 import json
 import re                                      #imports regex
@@ -16,6 +8,14 @@ from tkinter import *
 from PIL import ImageTk,Image
 import DatastoreCreator
 import SentenceAnalysis
+
+DICTFILE = DatastoreCreator.dictfile() #DICTFILE = "dictionary"
+DATABASENAME = DatastoreCreator.databasefile() #DATABASENAME = "lengdatabase"
+LOGO = "logo"
+DATABASENAME = "testdb"                 #test values
+DICTFILE = "testdictionary"
+LOGO = "logotest"
+BACKICON = "backarrow"
 
 class ResizingCanvas(Canvas):                 
     def __init__(self,parent,**kwargs):

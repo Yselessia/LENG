@@ -531,7 +531,7 @@ now adv.
 number n.
 nurse n.
 object n.
-o’clock adv.
+o'clock adv.
 October n.
 of prep.
 off adv., prep.

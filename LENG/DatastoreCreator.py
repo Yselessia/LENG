@@ -3,21 +3,23 @@
 
 
 FILE1 = "Oxford3000"
-FILENAME="Oxford5000"
+FILE2="Oxford5000"
 FILEIRREGV="irregverbs"
 FILEIRREGN="irregnouns"
 FILEIRREGA="irregadj"
-DATABASENAME = "lengdatabase"
+DATABASENAME = "langdatabase"
 DICTFILE = "dictionary"
 WRITABLEFILE = "tempfile"
-
-#test values    <<<<<<<<<<<
-DATABASENAME = "testdb"
-DICTFILE = "testdictionary"
 
 import re                                           #imports regex
 import json
 import sqlite3
+
+def dictfile():
+    return DICTFILE
+def databasefile():
+    return DATABASENAME
+
 
 def add_word(line):
     global dictionary, dupli_key
@@ -34,8 +36,7 @@ def add_word(line):
         origvalue= dictionary[word]
         if type(origvalue[0]) == int:
             for key in origvalue:
-                altvalue = dictionary[key]
-                if posdata == altvalue:
+                if posdata == dictionary[key]:
                     cancelledadd = True    #in this case, the word form is already in the dictionary
             if cancelledadd == False:      #if it is not, it can be added
                 origvalue.append(dupli_key)
@@ -53,19 +54,19 @@ def add_word(line):
 def clean_5000(f):           
     for line in f:
         line = line[:len(line)-2]                   #removes comprehension lvl
-        x = line.count(",")
-        if x > 0:                                   #checks for comma
-            x = line.find(",")
-            if x == 0:                              #if the comma is at the start of the line
+        comma = line.count(",")
+        if comma > 0:                                   #checks for comma
+            comma = line.find(",")
+            if comma == 0:                              #if the comma is at the start of the line
                 wordend= prevline.find(" ")
                 prevword = prevline[:wordend]
                 pos = line[1:]
             else:
                 wordend= line.find(" ")
                 prevword = line[:wordend]
-                line1 = line[:x]+"\n"
+                line1 = line[:comma]+"\n"
                 add_word(line1)
-                pos = line[x+1:]
+                pos = line[comma+1:]
             line = prevword + pos
         else:
             prevline = line
@@ -111,32 +112,29 @@ def create_dictionary():
     dictionary={}
     dupli_key=0
     #here True is used to signal that there is data in value[2], although the words are not irregular
-    dictionary["a"] = ["article", True, "indefinite"]
-    dictionary["an"] = ["article", True, "indefinite"]
-    dictionary["the"] = ["article", True, "definite"]
+    dictionary["a"] = ["article", True, "some"]
+    dictionary["an"] = ["article", True, "some"]
+    dictionary["the"] = ["article", True, "the"]
     dictionary["she"] = ["pron", True, "they"]          #how do plural :(
     dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
     try:
         current_file = FILE1
         with open(FILE1+".txt","r") as file:                #opens file
-            f= file.read()
+            f= file.read().lower()
             f= re.split(" |\n",f)                           #copy of file => list of lines
-            f= [item.lower() for item in f]
         clean_3000(f)
 
-        current_file = FILENAME
-        with open(FILENAME+".txt","r") as file:             #opens file
-            f= file.read()
+        current_file = FILE2
+        with open(FILE2+".txt","r") as file:             #opens file
+            f= file.read().lower()
             f= re.split("1|2",f)                            #copy of file => list of lines
-            f= [item.lower() for item in f]
         clean_5000(f)
 
         current_file = FILEIRREGV
         with open(FILEIRREGV+".txt","r") as file:          #verbs
-            f= file.read()
+            f= file.read().lower()
             f= re.sub(" /.+/|\n	\n","",f)
             f= f.split("\n")
-            f= [item.lower() for item in f]
 
         current_file = WRITABLEFILE
         with open(WRITABLEFILE+".txt","w") as file:
@@ -149,7 +147,7 @@ def create_dictionary():
                         file.write(":")                         #verb end eg ":read read reading :"
                         x = 0
         
-        current_file = "error.."
+        current_file = "'r' " + WRITABLEFILE
         with open(WRITABLEFILE+".txt","r") as file:
             f= file.read()
             f= f.split(":")
@@ -157,32 +155,37 @@ def create_dictionary():
                 wordend= line.find(" ")
                 word = line[:wordend]
                 if word in dictionary:
-                    key= word
-                    data= dictionary[key]
-                    if type(data[0]) == int:
-                        for i in data:
-                            if dictionary[i][0] == "v":
-                                data= dictionary[i]
-                                key= i
-                    if data[0] == "v":
-                        vforms= line.split(" ")
-                        while "" in vforms:
-                            vforms.remove("")
-                        for i in range(len(vforms)):
-                            form = vforms[i]
-                            slash = form.find("/")
-                            if slash != -1:
-                                vforms[i] = [form[:slash], form[slash+1:]]
-                        data[1] = True                              #True symbolises that the word is irregular 
-                        form = vforms[0]
-                        if form[len(form)-1] == ",":
-                            formend = form.index(",")
-                            vforms[0] = form[:formend]
-                            vforms.insert(1,form[formend+1:])    
-                        else:
-                            vforms.insert(1,form+"s")
-                        data.append(vforms)
-                        dictionary[key]= data
+                    try:
+                        key= word
+                        data= dictionary[key]
+                        if type(data[0]) == int:
+                            for i in data:
+                                if dictionary[i][0] == "v":
+                                    data= dictionary[i]
+                                    key= i
+                        if data[0] == "v":
+                            vforms= line.split(" ")
+                            while "" in vforms:
+                                vforms.remove("")
+                            for i in range(len(vforms)):
+                                form = vforms[i]
+                                slash = form.find("/")
+                                if slash != -1:
+                                    vforms[i] = [form[:slash], form[slash+1:]]
+                            data[1] = True                              #True symbolises that the word is irregular 
+                            form = vforms[0]
+                            if form[len(form)-1] == ",":
+                                formend = form.index(",")
+                                vforms[0] = form[:formend]
+                                vforms.insert(1,form[formend+1:])    
+                            else:
+                                vforms.insert(1,form+"s")
+                            data.append(vforms)
+                            dictionary[key] = data
+                    except:
+                        continue
+        
+        current_file = "error.."
         data = dictionary["be"]
         data[1] = True                              #True symbolises that the word is irregular 
         data.append(["am","is","were","been","was","are"])   #take note! this one is super-irregular.>
@@ -191,11 +194,10 @@ def create_dictionary():
 
         current_file = FILEIRREGN
         with open(FILEIRREGN+".txt","r") as file:            #nouns
-            f= file.read()
+            f= file.read().lower()
             f= f.split("\n")
-            f= [item.lower() for item in f]
             for line in f:
-                wordend= line.find("\t")
+                wordend= line.find(" ")
                 word = line[:wordend]
                 if word in dictionary:
                     key= word
@@ -216,9 +218,8 @@ def create_dictionary():
 
         current_file = FILEIRREGA
         with open(FILEIRREGA+".txt","r") as file:
-            f = file.read()
+            f = file.read().lower()
             f = f.split("\n")
-            f= [item.lower() for item in f]
             for i in range(0,len(f),3):
                 line = f[i]
                 wordend= line.find("\t")
@@ -231,23 +232,23 @@ def create_dictionary():
                             if dictionary[i][0] == "adj":
                                 data= dictionary[i]
                                 key= i
-                    sup_comp = line[:line.find("–")].split("\t")[1:3]
-                    sup_comp = [i.lower() for i in sup_comp]
-                    ''' #this is not necessary with the current wordlist
-                    if "/" in sup_comp[0] or "/" in sup_comp[0]:
-                        sup_comp2 = []
-                        sup_comp1 = []
-                        for i in range(sup_comp):
-                            word = sup_comp[i]
-                            if "/" in word:
-                                end = word.index("/")
-                                sup_comp1[i] = word[:end]
-                                sup_comp2.append(word[end+1:])
-                            sup_comp = [sup_comp1, sup_comp2]
-                            '''
-                    data[1] = True                              #True symbolises that the word is irregular 
-                    data.append(sup_comp)
-                    dictionary[key]= data
+                    if data[0] == "adj":
+                        sup_comp = line[:line.find("–")].lower().split("\t")[1:3]
+                        ''' #this is not necessary with the current wordlist
+                        if "/" in sup_comp[0] or "/" in sup_comp[0]:
+                            sup_comp2 = []
+                            sup_comp1 = []
+                            for i in range(sup_comp):
+                                word = sup_comp[i]
+                                if "/" in word:
+                                    end = word.index("/")
+                                    sup_comp1[i] = word[:end]
+                                    sup_comp2.append(word[end+1:])
+                                sup_comp = [sup_comp1, sup_comp2]
+                                '''
+                        data[1] = True                              #True symbolises that the word is irregular 
+                        data.append(sup_comp)
+                        dictionary[key]= data
 
     except:
         return f"{current_file}.txt not found"
@@ -256,12 +257,19 @@ def create_dictionary():
     value_list = list(dictionary.values())
     pos_value = ["article","prep","adv","n","v","adj","det","pron","conj","exclam","modal","number"]
     for i in value_list:
-        if i[0] not in pos_value:
-            dictionary.del(key_list[value_list.index(i)])
+        if i[0] not in pos_value and not (type(i[0]) == int and type(i[1]) == int):
+            for j in i:
+                if type(j) == int:
+                    del dictionary[j]
+            try:
+                del dictionary[key_list[value_list.index(i)]]
+            except:
+                print("unknown key error")
     
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
+        return "Dictionary saved"
     except:
         return "Error: file was not saved"
 
@@ -278,6 +286,7 @@ def create_database():
         if connection:
             connection.commit()
             connection.close()
+            return "Database saved"
 
 
 #TenseIs allows the 5 tenses taught by esol entry 3
@@ -344,6 +353,7 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                     UPDATE tblErrors
                     SET total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
                     END;""")
+
 
 #error = create_database()
 #if error:
