@@ -329,11 +329,10 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                     SVOOrder INTEGER DEFAULT 0,
                     SVAgreement INTEGER DEFAULT 0,
                     Criteria INTEGER DEFAULT 0,
-                    Articles INTEGER DEFAULT 0,
+                    Determiners INTEGER DEFAULT 0,
                     Prepositions INTEGER DEFAULT 0,
-                    Conjunctions INTEGER DEFAULT 0,
-                    PosAdjectives INTEGER DEFAULT 0,
                     Adjectives INTEGER DEFAULT 0,
+                    Adverbs INTEGER DEFAULT 0,
                     Total INTEGER,
                     PRIMARY KEY (StudentID, ExerciseID),
                     FOREIGN KEY (StudentID)
@@ -346,12 +345,12 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                     WHEN NEW.Total= -1
                     BEGIN
                     UPDATE tblErrors
-                    SET Total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
+                    SET Total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Determiners + NEW.Prepositions + NEW.Adjectives + NEW.Adverbs;
                     END;""","""CREATE TRIGGER sum_errors_update AFTER UPDATE ON tblErrors
                     WHEN NEW.total = OLD.total
                     BEGIN
                     UPDATE tblErrors
-                    SET total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Articles + NEW.Prepositions + NEW.Conjunctions + NEW.PosAdjectives + NEW.Adjectives;
+                    SET total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Determiners + NEW.Prepositions + NEW.Adjectives + NEW.Adverbs;
                     END;""")
 
 

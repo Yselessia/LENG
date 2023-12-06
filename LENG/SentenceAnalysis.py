@@ -48,7 +48,7 @@ class Word:
         if type(self) == Word:
             new_word = type(self)(self.word, key=self._key)
         else:
-            new_word = type(self)(Word(self))
+            new_word = type(self)(self)
         new_word.pos = self.pos
         new_word._dupli = self._dupli = dupli
         return new_word
@@ -183,10 +183,10 @@ class Sentence(list):
         return copies_bool, index_list
 
 def compile_all_patterns():     #<<<< fix th eorder of these
-    all_patterns = [(r'\bdet\b', r'\bdet\b\s+(adj|n)' ,'determinerPosition'),
-                    (r'\bprep\b', r'\bprep\b\s+(det)' ,'prepositionPosition'),
-                    (r'\badj\b', r'\badj\b\s+(adj|n)' ,'adjectivePosition'),
-                    (r'\badv\b', r'\badv\b\s+(v|adv)' ,'adverbPosition'),
+    all_patterns = [(r'\bdet\b', r'\bdet\b\s+(adj|n)' ,'Determiners'),
+                    (r'\bprep\b', r'\bprep\b\s+(det)' ,'Prepositions'),
+                    (r'\badj\b', r'\badj\b\s+(adj|n)' ,'Adjectives'),
+                    (r'\badv\b', r'\badv\b\s+(v|adv)' ,'Adverbs'),
                     (r'\bv\b', r'\b(v\s+){2,}v\b', 'verbRepeated'),
                     (r'v\b', r'n\b.*\bv\b', 'verbHasSubject'),
                     (r'pron|n', r'\b(?:n|pron)\s(?!pron|n)', 'nounRepeated')]
@@ -543,7 +543,7 @@ def subject_verb_error(sentence, Continue=True):
                                          if (item.start(), item.end()) not in [(match.start(), match.end()) 
                                                                                for match in j[1].finditer(pos_list)]]
                 err_positions_list.append(position_of_error)
-    if Continue:
+    if Continue == True:
         all_errors_list, new_sentence = correct_sva(all_errors, err_positions_list, pos_list, sentence)
         return all_errors_list, new_sentence
     else:
@@ -581,7 +581,7 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
             err_pos = pos_list[:err_pos_obj[0]].count(" ") - 1
             err_pos_2 = pos_list[:err_pos_obj[1]].count(" ") - 1
             match all_errors[index]:
-                case 'determinerPosition':
+                case 'Determiners':
                     if sentence[err_pos-1].pos == "n":
                         if sentence[err_pos-2] != "det":
                             temp_word = sentence[err_pos]
@@ -623,7 +623,7 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                         sentence = sentence_hold
                         del sentence[err_pos]
                         all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
-                case 'adjectivePosition':
+                case 'Adjectives':
                     if sentence[err_pos-1].pos == "n":
                         temp_word = sentence[err_pos]
                         del sentence[err_pos]
@@ -634,7 +634,7 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                         sentence = sentence_hold
                         del sentence[err_pos]
                         all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
-                case 'adverbPosition':
+                case 'Adverbs':
                     if sentence[err_pos-1].pos == "v":
                         temp_word = sentence[err_pos]
                         del sentence[err_pos]
@@ -689,7 +689,7 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                         del sentence[err_pos+1:err_pos_2]
                     all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
                     print(all_errors)
-                case 'prepositionPosition':
+                case 'Prepositions':
                     if sentence[err_pos-1].pos == "n":
                         if sentence[err_pos-2].pos == "det" and sentence[err_pos-3] != "prep":
                                 temp_word = sentence[err_pos]
@@ -760,7 +760,7 @@ def main_algorithm(sentence):
         sentence_new = sentence_new.capitalize() +"."
         if not sen.get_verb:
             all_errors_list.append("noVerbSubject")
-    return all_errors_list, sentence_new, spell_error_count
+    return all_errors_list, spell_error_count, sentence_new
 
 #testing
 

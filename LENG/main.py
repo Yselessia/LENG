@@ -173,6 +173,29 @@ def create_home():
 def home():
     new_screen(None, "NURTURING GRAMMAR MAIN MENU", icon1, False, "hidden", "hidden", "hidden", "normal", False)
 
+
+def err_list_sql_format(all_errors_list,spell_error_count):
+        field_names = 'Adverbs','Adjectives','Prepositions','Determiners'
+        fields = [i[0] for i in all_errors_list if i[0] in field_names]
+        values = [i[1] for i in all_errors_list if i[0] in field_names]
+        all_errors_names = [i[0] for i in all_errors_list]
+        err_num = 0
+        if 'verbHasSubject' in all_errors_names:
+            err_num = err_num + all_errors_list[all_errors_names.index('verbHasSubject')]
+        if 'verbRepeated' in all_errors_names:
+            err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')]
+        if 'nounRepeated' in all_errors_names:
+            err_num = err_num + all_errors_list[all_errors_names.index('nounRepeated')]
+        if err_num > 0:
+            fields.append('SVOOrder')
+            values.append(err_num)
+        if spell_error_count > 0:
+            fields.append('Spelling')
+            values.append(spell_error_count)
+        fields = tuple(fields)
+        values = tuple(values)
+        return fields, values
+
 def add_sentence_commit():
     id_choice = confirm_id_select()
     sentence = sentence_entry.get()
@@ -180,19 +203,52 @@ def add_sentence_commit():
     x = sentence.replace(' ','')
     if id_choice and x != '':
         global ex_id
-        all_errors_list, sentence_new, spell_error_count = SentenceAnalysis.main_algorithm(sentence)
+        all_errors_list, spell_error_count, sentence_new = SentenceAnalysis.main_algorithm(sentence)
+        all_errors_names = [i[0] for i in all_errors_list]
+        if 'noVerbSubject' in all_errors_names:
+            dialogue("Sorry, this sentence cannot be marked")
+        else:
+            change_messg = "Corrected sentence:\n"+sentence_new
+            confirm_change(change_messg)
+            global confirm
+            if confirm == True:
+                fields, values = err_list_sql_format(all_errors_list,spell_error_count)
+                #SVAgreement, Criteria <<<<<<<<
+                
+                if len(fields) > 0:
+                    select_query = "SELECT 1 FROM tblErrors WHERE StudentID = ? AND ExerciseID = ?"
+                    try:
+                        cursor.execute(select_query, (id_choice, ex_id))
+                        existing_record = cursor.fetchone() #Fetch one row (if any) holding "1"
+                    except:
+                        pass
+                    
+                    
+                    if existing_record:
+                        update_query = f"UPDATE tblErrors SET {', '.join(field + ' = ?' for field in fields)} WHERE StudentID = ? AND ExerciseID = ?"
+                    else:
+                        update_query = f"INSERT INTO tblErrors ({', '.join(fields)}, StudentID, ExerciseID) VALUES ({', '.join(['?'] * (len(fields)+2))})"
+                    try:
+                        cursor.execute(update_query, values+(id_choice, ex_id))
+                        cursor.commit()
+                    except:
+                        confirm_change("Error saving correction data.\nClick confirm to save the sentence anyway\nor cancel to delete sentence.")
+                        global confirm
+                        if confirm == False:
+                            cancel_save = True
+            else:
+                cancel_save = True
 
-        correct_sen = ""
-        for i in sentence_new:
-            correct_sen = correct_sen + i
-        new_sen = sentence, correct_sen, id_choice, ex_id
-        insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
-        try:
-            cursor.execute(insert_query, new_sen)
-            cursor.commit()
-            dialogue(f"StudentID = {id_choice}\nRecord updated.")
-        except:
-            dialogue("Error saving sentence.\n Please try again.")
+            if not cancel_save:
+                insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
+                try:
+                    cursor.execute(insert_query, (sentence, sentence_new, id_choice, ex_id))
+                    cursor.commit()
+                    dialogue(f"StudentID = {id_choice}\nRecord updated.")
+                except:
+                    dialogue("Error saving sentence.\n Please try again.")
+            else:
+                dialogue("Sentence data has been discarded.")
 
         
 
@@ -417,7 +473,7 @@ def stu_edit_c_commit():
     if id_choice:
         select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {id_choice}"
         cursor.execute(select_query)
-        results = cursor.fetchall()[0]
+        results = cursor.fetchone()
         stu_edit(id_choice, results)
 def stu_edit_choice(): 
     new_screen(record_edit,"EDIT STUDENT RECORD", icon2, True, "hidden")                
