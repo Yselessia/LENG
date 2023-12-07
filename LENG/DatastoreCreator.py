@@ -333,7 +333,7 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                     Prepositions INTEGER DEFAULT 0,
                     Adjectives INTEGER DEFAULT 0,
                     Adverbs INTEGER DEFAULT 0,
-                    Total INTEGER,
+                    Total INTEGER DEFAULT -1,
                     PRIMARY KEY (StudentID, ExerciseID),
                     FOREIGN KEY (StudentID)
                         REFERENCES tblStudents(StudentID)

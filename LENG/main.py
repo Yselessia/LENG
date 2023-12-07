@@ -284,8 +284,8 @@ def ex_create_commit():
                 #insert_query = f"INSERT INTO tblCriteria ({criteria}) VALUES (?)"
                 #cursor.execute(insert_query, (crit_val,))
                 #critId = cursor.lastrowid
-                #update_query = f"UPDATE tblExercises SET CriteriaID = '{critId}' WHERE ExerciseID = {ex_id}"
-                #cursor.execute(update_query)
+                #update_query = f"UPDATE tblExercises SET CriteriaID = ? WHERE ExerciseID = ?"
+                #cursor.execute(update_query, (critId,ex_id))
             connection.commit()
             dialogue(f"ExerciseID = {ex_id}\nExercise saved.")
             global all_patterns
@@ -454,11 +454,11 @@ def stu_add_commit():
             notes =  notes_entry.get(1.0,END)
             surname = sur_name_entry.get()
             if notes != '':
-                update_query = f"UPDATE tblStudents SET Notes = '{notes}' WHERE StudentID = {stu_id}"
-                cursor.execute(update_query)
+                update_query = f"UPDATE tblStudents SET Notes = ? WHERE StudentID = ?"
+                cursor.execute(update_query, (notes,stu_id))
             if surname != '':
-                update_query = f"UPDATE tblStudents SET LastName = '{surname}' WHERE StudentID = {stu_id}"
-                cursor.execute(update_query)
+                update_query = f"UPDATE tblStudents SET LastName = ? WHERE StudentID = ?"
+                cursor.execute(update_query, (surname,stu_id))
             connection.commit()
             dialogue(f"StudentID = {stu_id}\nRecord saved.")
         except:
@@ -471,8 +471,8 @@ def stu_add():
 def stu_edit_c_commit():
     id_choice = confirm_id_select()
     if id_choice:
-        select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = {id_choice}"
-        cursor.execute(select_query)
+        select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = ?"
+        cursor.execute(select_query, (id_choice,))
         results = cursor.fetchone()
         stu_edit(id_choice, results)
 def stu_edit_choice(): 
@@ -481,22 +481,24 @@ def stu_edit_choice():
     create_choice()
 
 def stu_edit_commit():
+    global confirm
+    confirm = False
     id_choice = int(stu_id_entry.get())
     new_stu = (fore_name_entry.get(), sur_name_entry.get(), contact_entry.get(), notes_entry.get(1.0, END))
     if new_stu[0] == '' or new_stu[3] =='':
         dialogue("Please fill in all necessary fields marked *")
     else:
         confirm_change("Are you sure you want to\nchange this record?")
-        if confirm == True:
-            try:
-                update_query = f"UPDATE tblStudents SET FirstName = ?, LastName = ?, ContactInfo = ?, Notes = ?  WHERE StudentID = {id_choice}"
-                cursor.execute(update_query, new_stu)
-                connection.commit()
-                dialogue(f"StudentID = {id_choice}\nRecord updated.")
-            except:
-                dialogue("Error updating student records.\n Please try again.")
-        else:
-            dialogue("Update canceled.")
+    if confirm == True:
+        try:
+            update_query = f"UPDATE tblStudents SET FirstName = ?, LastName = ?, ContactInfo = ?, Notes = ?  WHERE StudentID = ?"
+            cursor.execute(update_query, new_stu+(id_choice,))
+            connection.commit()
+            dialogue(f"StudentID = {id_choice}\nRecord updated.")
+        except:
+            dialogue("Error updating student records.\n Please try again.")
+    else:
+        dialogue("Update canceled.")
 def stu_edit(id_choice, values):    
     new_screen(stu_edit_choice,"EDIT STUDENT RECORD", icon2)
     create_stu_view()
