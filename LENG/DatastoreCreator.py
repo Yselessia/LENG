@@ -269,9 +269,28 @@ def create_dictionary():
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
-        return "Dictionary saved"
     except:
         return "Error: file was not saved"
+
+def set_connection_dict(confirm_change, dialogue):
+    import json
+    DICTFILE = 'dictionary'
+    try:
+        with open(DICTFILE+".json","r+") as file:
+            dictionary = json.load(file)
+            return dictionary
+    except:
+        err_messg = f"Error: No dictionary {DICTFILE}.json\nClick confirm to create new dictionary.\nSome data may be missing"
+        confirm = confirm_change(err_messg, False)
+        if confirm == True:
+            file_messg = create_dictionary()
+            if file_messg:
+                err_messg = f"Error: Unable to create dictionary file.\n{file_messg}"
+                dialogue(err_messg)
+            else:
+                return dictionary
+        else:
+            dialogue("Error: Unable to access dictionary.\nCheck directories for {DICTFILE}.json")
 
 def create_database():
     try:
@@ -286,7 +305,8 @@ def create_database():
         if connection:
             connection.commit()
             connection.close()
-            return "Database saved"
+
+
 
 
 #TenseIs allows the 5 tenses taught by esol entry 3

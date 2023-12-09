@@ -278,7 +278,7 @@ def add_word(orig_word):
         for item in word_copies:
             new_sen_list.append(item)
     else:
-        dialogue("Word not found", word.word)
+        dialogue("Word not found " + word.word)
         no_word = Word("<>", None)
         new_sen_list.append(no_word)
     return spell_error, word.word
@@ -290,7 +290,6 @@ def find_word(word, word_data):
         if type(word_data[0]) == int:
             for i in range(len(word_data)):
                 word_duplicates.append(word.make_dupli())
-                dialogue(word_data[i])
                 word_duplicates[i].set_key(word_data[i])
                 word_duplicates[i].pos = dictionary.get(word_data[i])
             word_duplicates.append(word)
@@ -455,74 +454,25 @@ def find_word(word, word_data):
 
 
 
-def pos_clean_sva(sentence, punctuated_sen,punctuated_index_key):  #sentence in this function is new_sen_list
+def pos_clean_sva(sentence):  #sentence in this function is new_sen_list
     verb_list = [item for item in sentence.get_verb]
     verb_definite = []
-    clause = None
     #false represents that the verb has no possible variations.
     if len(verb_list) > 1:
-        #this ????????? checks if there r diff clauses in the sentence
-        comma = []
-        comma_index = 0
-        while "," in [i[0] for i in punctuated_sen]:
-            #the position of the comma in the unsearched portion of the sentence
-            comma_index =  [i[0] for i in punctuated_sen][comma_index:].index(",") 
-            for i, sublist in enumerate(punctuated_index_key):
-                if comma_index in sublist:
-                    comma.append(i)
-        #if there is a comma in the sentence: - unfinished - creates <clause_sen> + changes sentence
-        if comma:
-            match len(comma):
-                case 1:
-                    pass
-                case 2:
-                    # list[index] = a,b,c where index is representative of the actual no. of words in the submitted sentence
-                    clause_full_index = sentence.dupli_index_key[comma[0]:comma[1]]
-                    #here it is a list (of lists) of indexes of words in the clause
-                    #next it is narrowed down to just the start and end indexes
-                    clause_full_index = [clause_full_index[0][0], clause_full_index[len(clause_full_index)][1]]
-                    #clause contains 
-                    clause = sentence[clause_full_index[0]:clause_full_index[1]+1]  #TEST THIS !!<<<<<<
-                    clause_rep = Noun(Word("<>", None)) #a custom word to represent the clause
-                    clause_sen = sentence[clause_full_index[0]:clause_full_index[1]]
-                    sentence = sentence[:clause_full_index[0]] + [clause_rep] + sentence[clause_full_index[1] +1:]
-                    verb_list = [item for item in sentence.get_verb]
-                case _:
-                    pass
         #this checks if some of the verbs are actually nouns or something idk
         for i in verb_list:
             if sentence.get_dupli(i)[0] == False:
                 verb_definite.append(verb_list[i])
-
     if verb_definite:
         if len(verb_definite) == 1:
             verb_list = verb_definite
-    #add to conditional <<<<<
-    if clause:
-        all_errors_list_1, clause = subject_verb_error(clause)
-
     all_errors_list, new_sentence = subject_verb_error(sentence)
-    if clause:
-        #adding the clause back into the sentence
-        new_sentence[clause_pos] = clause[0]
-        for word in clause:
-            new_sentence.insert(clause_pos+1, word)
-        #updating the number of errors
-        for i in range(len(all_errors_list)):
-            my_err = all_errors_list[i]
-            if my_err[0] in [i[0] for i in all_errors_list_1]:
-                err_count = my_err[1] + all_errors_list_1[all_errors_list_1.index[my_err]][1]
-                all_errors_list[i] = my_err[0], err_count
-        for i in range(len(all_errors_list_1)):
-            if all_errors_list_1[i][0] not in [i[0] for i in all_errors_list]:
-                all_errors_list.append(all_errors_list_1[i])
     return all_errors_list, new_sentence
 
 def subject_verb_error(sentence, Continue=True):
     global all_patterns
     pos_list = " "
     for i in sentence:
-        dialogue(sentence.dupli_index_key)
         if i.pos == "article":
             i.pos = "det"
         elif i.pos == "":
@@ -551,7 +501,6 @@ def subject_verb_error(sentence, Continue=True):
 
 #this function does a simple check to see if the correction was helpful
 def continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list):
-    dialogue(all_errors,"\n",new_errors,"\n",index)
     if not new_errors or not new_errors[index]:
         all_errors, err_positions, pos_list = new_errors, new_err_pos, new_pos_list 
         continue_true = True
@@ -567,7 +516,6 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
     #and this holds the error type and number of that error before the sentence is corrected.
     all_errors_hold = [(all_errors[i], len(err_positions[i])) for i in range(len(all_errors))]
     index = 0
-    print(pos_list)
     while all_errors:
         current_err = all_errors[index]
         err_pos_obj = err_positions[index]
@@ -688,7 +636,6 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                         sentence = sentence_hold
                         del sentence[err_pos+1:err_pos_2]
                     all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
-                    print(all_errors)
                 case 'Prepositions':
                     if sentence[err_pos-1].pos == "n":
                         if sentence[err_pos-2].pos == "det" and sentence[err_pos-3] != "prep":
@@ -726,8 +673,11 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
 
 #returns all_errors_list, sentence_new, spell_error_count
 
-def main_algorithm(sentence):
-    global new_sen_list
+def main_algorithm(sentence, lang_dict, lang_dialogue, lang_patterns):
+    global new_sen_list, dictionary, dialogue, all_patterns
+    dictionary = lang_dict
+    dialogue = lang_dialogue
+    all_patterns = lang_patterns
     new_sen_list = Sentence()
     spell_error_count = 0
     words, punctuated_sen = clean_sentence(sentence)
@@ -735,22 +685,12 @@ def main_algorithm(sentence):
         spell_error, new_word = add_word(word)
         if spell_error == True:
             spell_error_count = spell_error_count + 1
-            #this corrects the spelling of the word in the punctuated list of the sentence so that it can be found later
+            #this corrects the spelling of the word in the punctuated list of the sentence
             index_of_word = [item[0] for item in punctuated_sen].index(word)
             punctuated_sen[index_of_word][0] = new_word
 
-    #this creates a key for referencing the position of punctuation in the sentence (combined with .dupli_index_key)
-    # list[index] = a,b,c where index is representative of the actual no. of words in the submitted sentence
-    punctuated_index_key = [[] for i in range(len(words))]
-    j = 0
-    for i in range(len(punctuated_sen)):
-        if punctuated_sen[i][1] == True:
-            punctuated_index_key[j].append(i)
-        else:
-            j = j + 1
-
     if len(new_sen_list) > 0:   #??
-        all_errors_list, sen = pos_clean_sva(new_sen_list, punctuated_sen, punctuated_index_key)
+        all_errors_list, sen = pos_clean_sva(new_sen_list)
         sentence_new = ""
         for item in sen:
             if type(word) != str:
@@ -762,19 +702,8 @@ def main_algorithm(sentence):
             all_errors_list.append("noVerbSubject")
     return all_errors_list, spell_error_count, sentence_new
 
-#testing
 
-def set_connections():
-    DICTFILE = 'dictionary'
-    import json
-    global dictionary
-    try:
-        with open(DICTFILE+".json","r+") as file:
-            dictionary = json.load(file)
-    except:
-        err_messg = f"Error: No dictionary.\nCheck directory for {DICTFILE}.json"
-        dialogue(err_messg)
-
+'''
 dialogue = print
 set_connections()
 all_patterns = compile_all_patterns()
@@ -784,3 +713,4 @@ while sentence == "":
 all_errors_list, sentence_new, spell_error_count = main_algorithm(sentence)
 print(all_errors_list, spell_error_count)
 print(sentence_new,"\n",sentence)
+'''
