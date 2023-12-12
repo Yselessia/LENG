@@ -1,6 +1,7 @@
 from spellchecker import SpellChecker
 import re                           #imports regex
 spell = SpellChecker()
+DICTFILE = "dictionary"
 CONSONANT= r'[a-z&&[^aeiou]]'
 VOWEL = r'[aeiou]'
 CAPITALS = r'[A-Z]'
@@ -183,13 +184,13 @@ class Sentence(list):
         return copies_bool, index_list
 
 def compile_all_patterns():     #<<<< fix th eorder of these
-    all_patterns = [(r'\bdet\b', r'\bdet\b\s+(adj|n)' ,'Determiners'),
+    all_patterns = [(r'pron|n\b', r'\b(n|pron)\b\s+(adj|det|pron|n)', 'nounRepeated'),
+                    (r'\bdet\b', r'\bdet\b\s+(adj|n)' ,'Determiners'),
                     (r'\bprep\b', r'\bprep\b\s+(det)' ,'Prepositions'),
                     (r'\badj\b', r'\badj\b\s+(adj|n)' ,'Adjectives'),
                     (r'\badv\b', r'\badv\b\s+(v|adv)' ,'Adverbs'),
                     (r'\bv\b', r'\b(v\s+){2,}v\b', 'verbRepeated'),
-                    (r'v\b', r'n\b.*\bv\b', 'verbHasSubject'),
-                    (r'pron|n', r'\b(?:n|pron)\s(?!pron|n)', 'nounRepeated')]
+                    (r'v\b', r'n\b.*\bv\b', 'verbHasSubject')]
     return [(re.compile(pattern[0]), 
              re.compile(pattern[1]), 
              pattern[2], 
@@ -211,8 +212,8 @@ def call_lemma(word):
         lemma = [word[:ln-3]]
         if word[ln-4] != "y":
             lemma.append(word[:ln-3]+"e")
-        form = "gerund,presentParticiple"   #please note.
-        pos = "v"                           #"v", as gerund is derived from a verb
+        form = "singular:participle0"   #please note.
+        pos = "n:v"                           #"v", as gerund is derived from a verb
 
     elif word[ln-1] == "s":             #plural noun or present simple
         lemma = [word[:ln-1]]
@@ -262,8 +263,44 @@ def call_lemma(word):
     for i in range(len(lemma)):
             lemma[i] = [lemma[i], form, pos]
     return lemma                            #returns an array holding all valid options for the root word
+        
 
 def add_word(orig_word):
+    def add_to_dict(event):
+        selected_pos = scrll_crit.get(scrll_crit.curselection())
+        options.destroy()
+        confirm = confirm_change("Is it regularly conjugated?")
+        if confirm == True:
+            word = user_entry("Enter word:")
+            dictionary[word] = [selected_pos, False]
+        else:
+            try:
+                if selected_pos == "n":
+                    word = user_entry("Enter singular:")
+                    irreg_inputs = user_entry("Enter plural:")
+                elif selected_pos == "adj":
+                    word = user_entry("Enter positive:")
+                    irreg_inputs = [user_entry("Enter comparative:")]
+                    irreg_inputs.append( user_entry("Enter superlative:"))
+                    irreg_inputs = [pos_adj, comp_adj, super_adj]
+                elif selected_pos == "v":
+                    word = user_entry("Enter infinitive:")
+                    irreg_inputs = [word]
+                    irreg_inputs.append( user_entry("Enter third person present:"))
+                    irreg_inputs.append( user_entry("Enter simple past tense:"))
+                    irreg_inputs.append( user_entry("Enter past participle:"))
+                else:
+                    raise Exception
+                dictionary[word] = [selected_pos, True, irreg_inputs]
+            except:
+                dialogue("Unable to parse.\nDictionary edits cancelled.")
+        try:
+            with open(DICTFILE+".json", "w") as file:      
+                json.dump(dictionary, file)
+            dialogue("Saved to dictionary.\nRelaunch program to see changes")
+        except:
+            dialogue("Unknown error handling file")
+
     global dupli
     spell_error = False
     word = spell.correction(orig_word.lower())
@@ -278,9 +315,15 @@ def add_word(orig_word):
         for item in word_copies:
             new_sen_list.append(item)
     else:
-        dialogue("Word not found " + word.word)
-        no_word = Word("<>", None)
-        new_sen_list.append(no_word)
+        confirm = confirm_change(f"Word not found '{word.word}'\nClick confirm to add to dictionary\nor cancel to continue")
+        if confirm == True:
+            pos_value = ["article","prep","adv","n","v","adj","det","pron","conj","exclam","modal","number"]
+            options, scrll_crit = choice_win(pos_value, add_to_dict)
+            options.wait_window()
+            add_word(orig_word)
+        else:
+            no_word = Word("<>", None)
+            new_sen_list.append(no_word)
     return spell_error, word.word
 
 def find_word(word, word_data):
@@ -326,7 +369,9 @@ def find_word(word, word_data):
         index = None
         values = dictionary.values()
         for item in values:
-            if len(item)==3:
+            if type(item[0]) == int:
+                pass
+            elif item[1] == True:
                 if word.word == item[2] or (type(item[2]) == list and word.word in item[2]):
                     index = list(values).index(item)
                     key = list(dictionary.keys())[index]
@@ -347,31 +392,35 @@ def find_word(word, word_data):
                     else:
                         word = Verb(word)
                         
-                        if word == item[2][0] and len(item[2]) > 4:
+                        if word.word == item[2][0]:
                             word.tense = "present"
                             word.person.s(1)
+                            if len(item[2]) == 4:
+                                word.person.s(1,2)
+                                word.person.p(1,2,3)
                             word_duplicates.append(word.make_dupli())
-                        if word == item[2][1]:
+                                
+                        if word.word == item[2][1]:
                             word.tense = "present"
                             word.person.s(3)
                             word_duplicates.append(word.make_dupli())
-                        if word == item[2][2]:
+                        if word.word == item[2][2]:
                             word.tense = "past"
                             word.person.all()
                             if len(item[2]) > 4:
                                 word.person.s(2)
                                 word.person.p((1,2,3))
                             word_duplicates.append(word.make_dupli())
-                        if word == item[2][3]:
-                            word.tense = "pastParticiple"
+                        if word.word == item[2][3]:
+                            word.tense = "participle"
                             word.person.all()
                             word_duplicates.append(word.make_dupli())
                         if len(item[2]) > 4:
-                            if word == item[2][4]:
+                            if word.word == item[2][4]:
                                 word.tense = "past"
                                 word.person.s((1,3))
                                 word_duplicates.append(word.make_dupli())
-                            if word == item[2][5]:
+                            if word.word == item[2][5]:
                                 word.tense = "present"
                                 word.person.s(2)
                                 word.person.p((1,2,3))
@@ -387,7 +436,7 @@ def find_word(word, word_data):
             lemma_var = call_lemma(word.word)
             word_data = []
             for i in range(len(lemma_var)):
-                form = lemma_var[i]
+                form = lemma_var[i][1]
                 lemma_data = dictionary.get(lemma_var[i][0])
                 pos = []
                 key_temp = []
@@ -395,7 +444,10 @@ def find_word(word, word_data):
                     colon = form.find(":")
                     if colon !=-1:
                         word = Noun(word)
-                        word.plural = True
+                        if "plural" in form:
+                            word.plural = True
+                        else:
+                            word.plural = False
                         word_duplicates.append(word.make_dupli())
                         word = Verb(word)
                         word.tense = form[colon+1:len(word.word)-1]  #form = "plural:present3"
@@ -409,50 +461,41 @@ def find_word(word, word_data):
                     key = key_temp if key_temp else lemma_var[i][0]
                     form = lemma_var[i][1]
                     lemma_data[0] = pos if pos else lemma_data[0]
-                    comma = form.find(",")
-                    if comma !=-1 and "v" in lemma_data[0]:
-                        index = lemma_data[0].index("v")
-                        key = key[index]
-                        word.set_key(key)
-                        word = Noun(word)               #a gerund is a type of noun
-                        word_duplicates.append(word.make_dupli())
-                        word = Verb(word)
-                        word.tense = form[comma+1:]     #presentParticiple
-                        word.person.all()
-                        word_duplicates.append(word.make_dupli())
-                    elif comma == -1:
-                        colon = form.find(":")
-                        if colon !=-1:
-                            if "v" in lemma_data[0]:
-                                word = Verb(word)
-                                word.tense = form[colon+1:len(word.word)-1]  #form = "plural:present3"
-                                word.person.s(int(form[len(form)-1])) #here, 3 - always in last char
-                                word_duplicates.append(word.make_dupli())
-                            elif "n" in lemma_data[0]:
-                                word = Noun(word)
-                                word.plural = True
-                                word_duplicates.append(word.make_dupli())
+                    
+                    colon = form.find(":")
+                    if colon !=-1:
+                        if "v" in lemma_data[0]:
+                            word = Verb(word)
+                            word.tense = form[colon+1:len(word.word)-1]  #form = "plural:present3"
+                            person_int = int(form[len(form)-1]) #here, 3 - always in last char
+                            if person_int == 0:
+                                word.person.all()
                             else:
-                                check_pos = "adj"
-                                if form== "past":
-                                    check_pos = "v"
-                                if check_pos in lemma_data[0]:
-                                    if type(key) == list:
-                                        index = lemma_data[0].index(check_pos)
-                                        key = key[index]
-                                    word.set_key(key)
-                                    if check_pos == "v":
-                                        word = Verb(word)
-                                        word.tense = form
-                                        word.person.all()
-                                    else:
-                                        word = Adjective(word)
-                                        word.form = form
-                                    word_duplicates.append(word.make_dupli())
+                                word.person.s(person_int)
+                            word_duplicates.append(word.make_dupli())
+                        elif "n" in lemma_data[0]:
+                            word = Noun(word)
+                            word.plural = True
+                            word_duplicates.append(word.make_dupli())
+                        else:
+                            check_pos = "adj"
+                            if form== "past":
+                                check_pos = "v"
+                            if check_pos in lemma_data[0]:
+                                if type(key) == list:
+                                    index = lemma_data[0].index(check_pos)
+                                    key = key[index]
+                                word.set_key(key)
+                                if check_pos == "v":
+                                    word = Verb(word)
+                                    word.tense = form
+                                    word.person.all()
+                                else:
+                                    word = Adjective(word)
+                                    word.form = form
+                                word_duplicates.append(word.make_dupli())
+
     return word_duplicates
-
-
-
 
 def pos_clean_sva(sentence):  #sentence in this function is new_sen_list
     verb_list = [item for item in sentence.get_verb]
@@ -462,14 +505,137 @@ def pos_clean_sva(sentence):  #sentence in this function is new_sen_list
         #this checks if some of the verbs are actually nouns or something idk
         for i in verb_list:
             if sentence.get_dupli(i)[0] == False:
-                verb_definite.append(verb_list[i])
+                verb_definite.append(i)
     if verb_definite:
         if len(verb_definite) == 1:
             verb_list = verb_definite
-    all_errors_list, new_sentence = subject_verb_error(sentence)
+    all_errors_list, new_sentence = find_error_list(sentence)
+    auxiliary_errors, sentence    = auxiliary_verb(new_sentence)
+    sva_errors, new_sentence      = subject_verb_error(new_sentence)
+    verb_errors = sva_errors + auxiliary_errors
+    if verb_errors > 0:
+        all_errors_list.append(('SVAgreement', verb_errors))
+
     return all_errors_list, new_sentence
 
-def subject_verb_error(sentence, Continue=True):
+def auxiliary_verb(sentence):
+    verbs = sentence.get_verb
+    a_verbs = [verbs[i] for i in range(1, len(verbs)-1) if verbs[i-1]==(verbs[i]-1)]
+    auxiliary_errors = 0
+    for i in a_verbs:
+        if sentence[i].tense != "participle":
+            verb_data = dictionary[sentence[i].get_key]
+            if verb_data[1] == True:
+                new_word = Verb(Word(verb_data[2][3], key))
+            else:
+                key = sentence[i].get_key
+                if type(key) == int:
+                    values = dictionary.values()
+                    for i in len(values):
+                        if key in values[i]:
+                            new_word = Verb(Word( dictionary.keys()[i], key))
+                            break
+                else:
+                    new_word = Verb(Word(key))
+            new_word.person.all()
+            new_word.tense = "participle"
+            sentence[i] = new_word
+            auxiliary_errors = auxiliary_errors + 1
+    return auxiliary_errors, sentence
+
+def subject_verb_error(sentence):
+    verbs = sentence.get_verb
+    nouns = sentence.get_pos("n") + sentence.get_pos("pronoun")
+    nouns.sort()
+    sva_errors = 0
+    for i in verbs:
+        if sentence[i].tense in ("past","present"):
+            noun_i = [j for j in nouns if j < i]
+            nouns = [j for j in nouns if j > i]
+            if noun_i:
+                person_verb = 3
+                if len(noun_i) > 1:
+                    plural_verb = True
+                else:
+                    subject = sentence[noun_i[0]]
+                    if subject.pos == "pron":
+                        if subject.word == "i":
+                            person_verb = 1
+                        elif subject.word == "you":
+                            person_verb = 2
+                    if subject.plural == True:
+                        plural_verb = True
+                    else:
+                        plural_verb = False
+                if (plural_verb == True and person_verb not in sentence[i].person.plural) or (plural_verb == False and person_verb not in sentence[i].person.singular):
+                    key = sentence[i].get_key
+                    verb_data = dictionary[key]
+                    if verb_data[1] == True:
+                        if key != "be":
+                            if sentence[i].tense == "present":
+                                if plural_verb == False and person_verb == 3:
+                                    new_word = Verb(Word(verb_data[2][1], key))
+                                    new_word.person.s(3)
+                                else:
+                                    new_word = Verb(Word(verb_data[2][0], key))
+                                    new_word.person.s(1,2)
+                                    new_word.person.p(1,2,3)
+                            elif sentence[i].tense == "past":
+                                new_word = Verb(Word(verb_data[2][2], key))
+                                new_word.person.all()
+                        else:
+                            if sentence[i].tense == "present":
+                                if plural_verb == False and person_verb == 1:
+                                    new_word = Verb(Word(verb_data[2][0], key))
+                                    new_word.person.s(1)
+                                elif plural_verb == False and person_verb == 3:
+                                    new_word = Verb(Word(verb_data[2][1], key))
+                                    new_word.person.s(3)
+                                else:
+                                    new_word = Verb(Word(verb_data[2][5], key))
+                                    new_word.person.s(2)
+                                    new_word.person.p(1,2,3)
+                            elif sentence[i].tense == "past":
+                                if plural_verb == False and person_verb in (1,3):
+                                    new_word = Verb(Word(verb_data[2][0], key))
+                                    new_word.person.s(person_verb)
+                                else:
+                                    new_word = Verb(Word(verb_data[2][4], key))
+                                    new_word.person.s(2)
+                                    new_word.person.p(1,2,3)
+                    else:
+                        if sentence[i].tense == "present":
+                            if type(key) == int:
+                                values = dictionary.values()
+                                for i in len(values):
+                                    if key in values[i]:
+                                        verb_lemma = dictionary.keys()[i]
+                                        break
+                            else:
+                                verb_lemma = key
+                            if plural_verb == False and person_verb == 3:
+                                new_word = Verb(Word(verb_lemma+"s", key))
+                                new_word.person.s(3)
+                            else:
+                                new_word = Verb(Word(verb_lemma, key))
+                                new_word.person.s(1,2)
+                                new_word.person.p(1,2,3)
+                    sentence[i] = new_word
+                    sva_errors = sva_errors + 1
+
+    return sva_errors, sentence
+#       #present participle past infinitive
+#       #["am",     "is",       "were",     "been",     "was", "are"]
+#       #["become", "becomes",  "became",   "become"]
+#present#  allbut   3
+#pres be#  1        3                                           2plural123
+#pastreg#                       all          participle
+#past be#                       2/plural123  participle  13
+#       #["add",    "adds",     "added"   
+#       #  allbut   3           allpast/participle
+
+
+def find_error_list(sentence, Continue=True):
     global all_patterns
     pos_list = " "
     for i in sentence:
@@ -482,7 +648,7 @@ def subject_verb_error(sentence, Continue=True):
     err_positions_list = []
     for j in all_patterns:
         if j[0].findall(pos_list):
-            if j[2] == 'verbRepeated':
+            if 'Repeated' in j[2]:
                 if j[1].findall(pos_list):
                     all_errors.append(j[2])
                     position_of_error = [(item.start(), item.end()) for item in j[1].finditer(pos_list)]
@@ -494,8 +660,10 @@ def subject_verb_error(sentence, Continue=True):
                                                                                for match in j[1].finditer(pos_list)]]
                 err_positions_list.append(position_of_error)
     if Continue == True:
-        all_errors_list, new_sentence = correct_sva(all_errors, err_positions_list, pos_list, sentence)
-        return all_errors_list, new_sentence
+        x, new_sentence = correct_sva(all_errors, err_positions_list, pos_list, sentence)
+
+        all_errors_hold = [(all_errors[i], len(err_positions_list[i])) for i in range(len(all_errors))]
+        return all_errors_hold, new_sentence
     else:
         return all_errors, err_positions_list, pos_list
 
@@ -535,7 +703,7 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                             temp_word = sentence[err_pos]
                             del sentence[err_pos]
                             sentence.insert(err_pos-1, temp_word)
-                            new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                            new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                             continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     else:
                         later_verb_list = [i for i in sentence.get_verb if i > err_pos]
@@ -565,46 +733,46 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                                     new_word.plural = True
                                 new_word.person = 1
                             sentence[err_pos] = new_word
-                            all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                            all_errors, err_positions, pos_list = find_error_list(sentence, False)
                             continue_true = True
                     if continue_true == False:
                         sentence = sentence_hold
                         del sentence[err_pos]
-                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                        all_errors, err_positions, pos_list = find_error_list(sentence, False)
                 case 'Adjectives':
                     if sentence[err_pos-1].pos == "n":
                         temp_word = sentence[err_pos]
                         del sentence[err_pos]
                         sentence.insert(err_pos-1, temp_word)
-                        new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                        new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                         continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     if continue_true == False:
                         sentence = sentence_hold
                         del sentence[err_pos]
-                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                        all_errors, err_positions, pos_list = find_error_list(sentence, False)
                 case 'Adverbs':
                     if sentence[err_pos-1].pos == "v":
                         temp_word = sentence[err_pos]
                         del sentence[err_pos]
                         sentence.insert(err_pos-1, temp_word)
-                        new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                        new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                         continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     if continue_true == False:
                         sentence = sentence_hold
                         del sentence[err_pos]
-                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                        all_errors, err_positions, pos_list = find_error_list(sentence, False)
 
                 case 'verbHasSubject':
                     if "n" in pos_list:
                         noun_pos = pos_list[:pos_list.index("n")].count(" ") - 1
                         sentence.insert(noun_pos + 1, sentence[err_pos])
                         del sentence[err_pos]
-                        new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                        new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                         continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     if continue_true == False:
                         sentence = sentence_hold
                         del sentence[err_pos]
-                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                        all_errors, err_positions, pos_list = find_error_list(sentence, False)
 
                 case 'verbRepeated':
                     for i in range(len(sentence[err_pos:err_pos_2])):
@@ -622,33 +790,24 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                         del sentence[err_pos:keep_index[0]]
                     else:
                         del sentence[err_pos+1:err_pos_2]
-                    all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                    all_errors, err_positions, pos_list = find_error_list(sentence, False)
                 case 'nounRepeated':
-                    later_verb_list = [i for i in sentence.get_verb if i > err_pos]
-                    if later_verb_list:
-                        for v in later_verb_list:
-                            temp_word = sentence[err_pos]
-                            sentence.insert(v+1, temp_word)
-                            del sentence[err_pos]
-                            new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
-                            continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
-                    if continue_true == False:
-                        sentence = sentence_hold
-                        del sentence[err_pos+1:err_pos_2]
-                    all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                    new_word = Word("and")
+                    sentence.insert(err_pos+1,new_word)
+                    all_errors, err_positions, pos_list = find_error_list(sentence, False)
                 case 'Prepositions':
                     if sentence[err_pos-1].pos == "n":
                         if sentence[err_pos-2].pos == "det" and sentence[err_pos-3] != "prep":
                                 temp_word = sentence[err_pos]
                                 del sentence[err_pos]
                                 sentence.insert(err_pos-3, temp_word)
-                                new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                                new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                                 continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                         elif sentence[err_pos-2] not in ["prep","det"]:
                                 temp_word = sentence[err_pos]
                                 del sentence[err_pos]
                                 sentence.insert(err_pos-2, temp_word)
-                                new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                                new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                                 continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     
                     elif sentence[err_pos-1].pos == "det" or sentence[err_pos-1].pos == "pron":
@@ -656,12 +815,12 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
                             temp_word = sentence[err_pos]
                             del sentence[err_pos]
                             sentence.insert(err_pos-1, temp_word)
-                            new_errors, new_err_pos, new_pos_list = subject_verb_error(sentence, False)
+                            new_errors, new_err_pos, new_pos_list = find_error_list(sentence, False)
                             continue_true, all_errors, err_positions, pos_list = continue_correction(index, all_errors, err_positions, pos_list, new_errors, new_err_pos, new_pos_list)
                     if continue_true == False:
                         sentence = sentence_hold
                         del sentence[err_pos]
-                        all_errors, err_positions, pos_list = subject_verb_error(sentence, False)
+                        all_errors, err_positions, pos_list = find_error_list(sentence, False)
                 case _:
                     dialogue("unknown error in sentence")
 
@@ -673,10 +832,13 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
 
 #returns all_errors_list, sentence_new, spell_error_count
 
-def main_algorithm(sentence, lang_dict, lang_dialogue, lang_patterns):
-    global new_sen_list, dictionary, dialogue, all_patterns
+def main_algorithm(sentence, lang_dict, lang_patterns, lang_dialogue, lang_confirm_change, lang_choice_win, lang_user_entry):
+    global new_sen_list, dictionary, dialogue, confirm_change, choice_win, user_entry, all_patterns
     dictionary = lang_dict
     dialogue = lang_dialogue
+    confirm_change = lang_confirm_change
+    choice_win = lang_choice_win
+    user_entry = lang_user_entry
     all_patterns = lang_patterns
     new_sen_list = Sentence()
     spell_error_count = 0
@@ -697,9 +859,12 @@ def main_algorithm(sentence, lang_dict, lang_dialogue, lang_patterns):
                 if type(word.word) != str:
                     word = word.word
             sentence_new = sentence_new + " " + item.word
-        sentence_new = sentence_new.capitalize() +"."
+        sentence_new = sentence_new[1].upper()+ sentence_new[2:]+ "."
+        sentence_new = sentence_new.replace(" i ", " I ")
         if not sen.get_verb:
             all_errors_list.append("noVerbSubject")
+        if sentence_new.replace(".","") == sentence.replace(".",""):
+            all_errors_list = None
     return all_errors_list, spell_error_count, sentence_new
 
 

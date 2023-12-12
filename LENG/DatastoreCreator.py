@@ -1,7 +1,3 @@
-#tragically, this is broken.
-
-
-
 FILE1 = "Oxford3000"
 FILE2="Oxford5000"
 FILEIRREGV="irregverbs"

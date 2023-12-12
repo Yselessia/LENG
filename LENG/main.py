@@ -1,5 +1,4 @@
 import sys
-import json
 import re                                      #imports regex
 import sqlite3
 import datetime
@@ -67,6 +66,22 @@ def confirm_change(change_messg, root_tr=True):
     if root_tr == False:
         win_check.mainloop()
     return confirm.get()
+
+def user_entry(new_messg="Enter text:"):
+    win_entry = Toplevel(root)
+    win_entry.grab_set()
+    win_entry.overrideredirect(True)
+    win_entry.geometry('400x200+400+200')
+    messg = Label(master=win_entry, text=new_messg, font=('Arial',14), height=25, width=120)
+    messg.place(relx=0.5, rely=0.4, anchor=N)
+    entry_box = ctk.CTkEntry(master=win_entry, width=200, corner_radius=10, border_width=2)
+    entry_box.place(relx=0.5, rely=0.6, anchor=CENTER)
+    button = ctk.CTkButton(master=win_entry, text="enter", command=lambda: (win_entry.destroy()), fg_color='black', hover_color='black', corner_radius=10)
+    button.place(relx=0.5, rely=0.9, anchor=S)
+    win_entry.wait_window()
+    user_text = entry_box.get()
+    return user_text
+
 
 def  back_command():
     if back[0] == True:
@@ -152,19 +167,19 @@ def bg_canvas():
 
 def create_home():
     ex_create_btn = ctk.CTkButton(main_win_frame, text="CREATE AN EXERCISE", command=lambda: ex_create(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     ex_create_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
     record_edit_btn = ctk.CTkButton(main_win_frame, text="EDIT STUDENT RECORDS", command=lambda: record_edit(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     record_edit_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
     record_view_btn = ctk.CTkButton(main_win_frame, text="VIEW STUDENT RECORDS", command=lambda: record_view_choice(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     record_view_btn.place(relx=0.5, rely=0.59, anchor=CENTER)
     ex_view_btn = ctk.CTkButton(main_win_frame, text="VIEW EXERCISES", command=lambda: ex_view_choice(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     ex_view_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 def home():
@@ -172,17 +187,17 @@ def home():
 
 
 def err_list_sql_format(all_errors_list,spell_error_count):
-        field_names = 'Adverbs','Adjectives','Prepositions','Determiners'
+        field_names = 'Adverbs','Adjectives','Prepositions','Determiners','SVAgreement'
         fields = [i[0] for i in all_errors_list if i[0] in field_names]
         values = [i[1] for i in all_errors_list if i[0] in field_names]
         all_errors_names = [i[0] for i in all_errors_list]
         err_num = 0
         if 'verbHasSubject' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('verbHasSubject')]
+            err_num = err_num + all_errors_list[all_errors_names.index('verbHasSubject')][1]
         if 'verbRepeated' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')]
+            err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')][1]
         if 'nounRepeated' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('nounRepeated')]
+            err_num = err_num + all_errors_list[all_errors_names.index('nounRepeated')][1]
         if err_num > 0:
             fields.append('SVOOrder')
             values.append(err_num)
@@ -193,6 +208,20 @@ def err_list_sql_format(all_errors_list,spell_error_count):
         values = tuple(values)
         return fields, values
 
+def err_list_readable(all_errors_names):
+    readable_i = ""
+    for i in all_errors_names:
+        list_i = re.split(r'([A-Z])', i)
+        for j in range(len(list_i)):
+            if re.match(r'[A-Z]', list_i[j]):
+                readable_i = " "+readable_i + list_i[j].lower()
+            else:
+                readable_i = readable_i + list_i[j].lower()
+        readable_i = readable_i + ","
+    if readable_i == "":
+        readable_i = "None"
+    return readable_i
+            
 def add_sentence_commit():
     id_choice = confirm_id_select()
     sentence = sentence_entry.get()
@@ -200,30 +229,20 @@ def add_sentence_commit():
     x = sentence.replace(' ','')
     if id_choice and x != '':
         global ex_id, dictionary, all_patterns
-        all_errors_list, spell_error_count, sentence_new = SentenceAnalysis.main_algorithm(sentence, dictionary, dialogue, all_patterns)
+        all_errors_list, spell_error_count, sentence_new = SentenceAnalysis.main_algorithm(sentence, dictionary, all_patterns, dialogue, confirm_change, crit_choice_win, user_entry)
         all_errors_names = [i[0] for i in all_errors_list]
         if 'noVerbSubject' in all_errors_names:
             dialogue("Sorry, this sentence cannot be marked")
         else:
             change_messg = "Corrected sentence:\n"+sentence_new
             confirm_a = confirm_change(change_messg)
-            readable_i = ""
-            for i in all_errors_names:
-                list_i = re.split(r'([A-Z])', i)
-                for j in range(len(list_i)):
-                    if re.match(r'[A-Z]', list_i[j]):
-                        readable_i = " "+readable_i + list_i[j].lower()
-                    else:
-                        readable_i = readable_i + list_i[j].lower()
-                readable_i = readable_i + ","
-            if readable_i == "":
-                readable_i = "None"
-            change_messg = "Errors:\n"+ readable_i#[:len(readable_i)-2]
+            readable_i = err_list_readable(all_errors_names)
+            change_messg = "Errors:\n"+ readable_i
             confirm_b = confirm_change(change_messg)
             if confirm_a == True and confirm_b == True:
                 cancel_save = False
-                fields, values = err_list_sql_format(all_errors_list,spell_error_count)
-                #SVAgreement, Criteria <<<<<<<<
+                fields, values = err_list_sql_format(all_errors_list, spell_error_count)
+                #Criteria <<<<<<<<
                 if len(fields) > 0:
                     select_query = "SELECT 1 FROM tblErrors WHERE StudentID = ? AND ExerciseID = ?"
                     try:
@@ -248,8 +267,6 @@ def add_sentence_commit():
 
             if cancel_save == False:
                 insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
-                print(insert_query)
-                print(sentence, sentence_new, id_choice, ex_id)
                 try:
                     cursor.execute(insert_query, (sentence, sentence_new, id_choice, ex_id))
                     connection.commit()
@@ -270,7 +287,7 @@ def add_sentence(analysis_online=True):
         create_choice()
     else:
         dialogue("Sentences cannot be added at this point.\nDictionary offline")
-        home()
+        return None
 
 def ex_create_commit():
     if not dictionary:
@@ -375,6 +392,7 @@ def crit_choice_win(check_values=None, on_select=on_crit_select, btn_pos=0.65):
     scrll_crit.bind('<<ListboxSelect>>', on_select)
     scrll_crit.place(relx=1.0, relwidth=1, relheight=0.75, anchor=NE)
     scroller.place(relwidth=0.05, relheight=1, anchor=E)
+    return options, scrll_crit
     options.mainloop()
 def is_check_constraint(column_name):
     try:
@@ -397,19 +415,19 @@ def is_check_constraint(column_name):
 def record_edit():
     new_screen(home, "EDIT RECORDS", False, "hidden", "hidden", "normal")
     stu_add_btn = ctk.CTkButton(centre_frame, text="ADD STUDENT", command=lambda: stu_add(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     stu_add_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
     stu_edit_btn = ctk.CTkButton(centre_frame, text="EDIT RECORDS", command=lambda: stu_edit_choice(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     stu_edit_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
     stu_remove_btn = ctk.CTkButton(centre_frame, text="REMOVE STUDENT", command=lambda: stu_remove(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     stu_remove_btn.place(relx=0.5, rely=0.59, anchor=CENTER)
     cancel_btn = ctk.CTkButton(centre_frame, text="CANCEL", command=lambda:  back_command(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color='#8f8fad', text_color='black', font=('Arial',20), 
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     cancel_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 
@@ -428,28 +446,31 @@ def ex_view():
         try:
             select_query = "SELECT * FROM tblExercises WHERE ExerciseID = ?"
             cursor.execute(select_query, (id_choice,))
-            exercise_data = cursor.fetchone
+            exercise_data = cursor.fetchone()
         except:
             dialogue("Database error.\nPlease try again")
         if exercise_data:
-            new_screen(ex_view_choice,"VIEW EXERCISES", True, "hidden")
-            create_choice("sen", id_choice)
-            label_box("EXERCISE ID", 0.1, left_frame)
+            new_screen(ex_view_choice, f"EXERCISE {id_choice}", True, "hidden")
+            label_box("EXERCISE ID", 0.05, left_frame)
             exId_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
-            exId_entry.place(relx=0.25, rely=0.18)
+            exId_entry.place(relx=0.25, rely=0.14)
             exId_entry.insert(END, exercise_data[0])
             exId_entry.configure(state='readonly')
-            label_box("EXERCISE DATE", 0.32, left_frame)
+            label_box("EXERCISE DATE", 0.23, left_frame)
             ex_date_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-            ex_date_entry.place(relx=0.25, rely=0.4)
+            ex_date_entry.place(relx=0.25, rely=0.32)
             ex_date_entry.insert(END, exercise_data[2])
             ex_date_entry.configure(state='readonly')
-            label_box("DESCRIPTION",0.55, left_frame, True)
-            descrip_entry = ctk.CTkTextbox(left_frame, width=200, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
-            descrip_entry.place(relx=0.25, rely=0.63)
+            label_box("DESCRIPTION",0.41, left_frame, True)
+            descrip_entry = ctk.CTkTextbox(left_frame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
+            descrip_entry.place(relx=0.25, rely=0.50)
             descrip_entry.insert(1.0, exercise_data[1])
-            descrip_entry.configure(state='readonly')
+            descrip_entry.configure(state='disabled')
+
+            create_choice("sen", id_choice)
+
 def ex_view_choice():
+    new_screen(home, "")        #clears the scrll_state if its returned from ex_view
     new_screen(home, "VIEW EXERCISES", True, "hidden")
     make_commit_btn(left_frame, ex_view, "SELECT")
     create_choice('ex')
@@ -594,7 +615,7 @@ def create_choice(choose_item='stu', ex_id_choice=None):
     elif choose_item=="sen":
         fields= ("Sentence", "CorrectedSentence")
         column_names = ("FirstName","LastName")
-        join_string = ("LEFT JOIN tblStudents c ON main.StudentID = c.StudentID WHERE main.ExerciseID = {ex_id_choice}")
+        join_string = (f"LEFT JOIN tblStudents c ON main.StudentID = c.StudentID WHERE main.ExerciseID = {ex_id_choice}")
     else:
         fields= ("StudentID", "FirstName", "LastName")
         column_names = ("Total",)
@@ -620,57 +641,62 @@ def create_choice(choose_item='stu', ex_id_choice=None):
         scrll_id.insert(0, f"NO {label.upper()}S AVAILABLE")
         id_entry.configure(state='readonly')
         commit_btn.config(state='disabled')
-    else:
-        results_list = []
-        if choose_item == "sen":
-            scrll_id.insert(END, "Sentences:\n\n")
-            for row in range(len(results)):
-                results_list.append([])
-                results_list[row].append(results[row][2]+" "+results[row][3]+":")
-                results_list[row].append("\n"+results_list[0])
-                results_list[row].append("\n"+results_list[1])
-                if len(results_list) > 1:
-                    i = row-1
-                    while not results_list[i]:
-                        i = i-1
-                    if results_list[i][0] == results_list[row][0]:
-                        results_list[row][0] = ""
-        else:
-            scrll_id.bind('<<ListboxSelect>>', on_id_select)
-            if choose_item=='stu':
-                results_new = []
-                for record in results:
-                    error_val = record[len(record)-1] if record[len(record)-1] else 0
-                    index = 0
-                    for i in range(len(results_new)):
-                        error_i = results_new[i][len(record)-1] if results_new[i][len(record)-1] else 0
-                        if error_val <= error_i:
-                            index = i
-                            break
-                        else:
-                            index = i + 1
-                    results_new.insert(index, record)
-                results = results_new
+        return None
 
-            for row in range(len(results)):
-                results_list.append([])
-                for field in range(len(results[0])):
-                    if field<2:
-                        results_list[row].append(str(results[row][field]))
+    results_list = []
+    if choose_item == "sen":
+        scrll_id.insert(END, "Sentences:\n\n")
+        for row in range(len(results)):
+            results_list.append(results[row][2]+" "+results[row][3]+":")
+            results_list.append(results[row][0])
+            results_list.append(results[row][1])
+            if len(results_list) > 3:
+                i = (3*row)-3
+                while ":" not in results_list[i] and i >= 3:
+                    i = i-1
+                if results_list[i] == results_list[row*3]:
+                    results_list[row*3] = ""
+        results_list = [i for i in results_list if i != ""]
+    else:
+        scrll_id.bind('<<ListboxSelect>>', on_id_select)
+        if choose_item=='stu':
+            results_new = []
+            for record in results:
+                error_val = record[len(record)-1] if record[len(record)-1] else 0
+                index = 0
+                for i in range(len(results_new)):
+                    error_i = results_new[i][len(record)-1] if results_new[i][len(record)-1] else 0
+                    if error_val <= error_i:
+                        index = i
+                        break
                     else:
-                        if choose_item =='stu':
-                            if results[row][field] != None:
-                                results_list[row].append(results[row][field])     
-                            break                                       #breaks after 3 items of a student's data
-                        elif results[row][field] != 0 and results[row][field] == 1:
-                            results_list[row].append(column_names[field-2])
-                        elif results[row][field] != 0 and results[row][field]: 
-                            results_list[row].append(column_names[field-2]+' '+results[row][field])
-                        else:
-                            break                                       #breaks if no criteria
-        for row in results_list:
+                        index = i + 1
+                results_new.insert(index, record)
+            results = results_new
+
+        for row in range(len(results)):
+            results_list.append([])
+            for field in range(len(results[0])):
+                if field<2:
+                    results_list[row].append(str(results[row][field]))
+                else:
+                    if choose_item =='stu':
+                        if results[row][field] != None:
+                            results_list[row].append(results[row][field])     
+                        break                                       #breaks after 3 items of a student's data
+                    elif results[row][field] != 0 and results[row][field] == 1:
+                        results_list[row].append(column_names[field-2])
+                    elif results[row][field] != 0 and results[row][field]: 
+                        results_list[row].append(column_names[field-2]+' '+results[row][field])
+                    else:
+                        break                                       #breaks if no criteria
+    
+    for row in results_list:
+        if choose_item != "sen":
             item = '<'+row[0]+'> '+"  ".join(row[1:])
-            scrll_id.insert(END, item)
+        else:
+            item = row
+        scrll_id.insert(END, item)
 
 
 def set_connection():
@@ -700,6 +726,7 @@ def set_connection():
 
 bg_col1 = '#e6e6e6'
 bg_col2 = '#4a4a7a'
+hover_col3 = '#8f8fad'
 back = [True, home]
 today = datetime.datetime.today().strftime('%Y-%m-%d')
 set_connection()
