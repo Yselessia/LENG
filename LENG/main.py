@@ -459,6 +459,7 @@ def plot_graph(x_list, y_list, title, student="student", lbl_list=None):
     ax.set_xlabel('date', labelpad=10)
     ax.set_ylabel('errors per exercise')
     ax.set_title(title)
+    ax.legend(loc='upper right', ncol=2)
     canvas = FigureCanvasTkAgg(fig, master=graph_win)
     canvas.draw()
     canvas.get_tk_widget().place(relheight=1, relwidth=1)
