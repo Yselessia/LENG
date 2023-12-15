@@ -107,12 +107,6 @@ def create_dictionary():
     global dictionary, dupli_key
     dictionary={}
     dupli_key=0
-    #here True is used to signal that there is data in value[2], although the words are not irregular
-    dictionary["a"] = ["article", True, "some"]
-    dictionary["an"] = ["article", True, "some"]
-    dictionary["the"] = ["article", True, "the"]
-    dictionary["she"] = ["pron", True, "they"]          #how do plural :(
-    dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
     try:
         current_file = FILE1
         with open(FILE1+".txt","r") as file:                #opens file
@@ -170,7 +164,7 @@ def create_dictionary():
                                     vforms[i] = [form[:slash], form[slash+1:]]
                             data[1] = True                              #True symbolises that the word is irregular 
                             form = vforms[0]
-                            if form[len(form)-1] == ",":
+                            if form[-1] == ",":
                                 formend = form.index(",")
                                 vforms[0] = form[:formend]
                                 vforms.insert(1,form[formend+1:])    
@@ -249,6 +243,16 @@ def create_dictionary():
     except:
         return f"{current_file}.txt not found"
     
+    
+    #here True is used to signal that there is data in value[2], although the words are not irregular
+    dictionary["a"] = ["article", True, "some"]
+    dictionary["an"] = ["article", True, "some"]
+    dictionary["the"] = ["article", True, "the"]
+    dictionary["she"] = ["pron", True, "they"]          #how do plural :(
+    dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
+    dictionary["this"] = ["det", True, "these"]
+    dictionary["that"] = ["det", True, "those"]
+    
     key_list = list(dictionary.keys())
     value_list = list(dictionary.values())
     pos_value = ["article","prep","adv","n","v","adj","det","pron","conj","exclam","modal","number"]
@@ -261,7 +265,10 @@ def create_dictionary():
                 del dictionary[key_list[value_list.index(i)]]
             except:
                 print("unknown key error")
-    
+    delete_list = dictionary[""]
+    del dictionary[""]
+    for i in delete_list:
+        del dictionary[i]
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
@@ -306,27 +313,28 @@ def create_database():
 
 
 #TenseIs allows the 5 tenses taught by esol entry 3
-DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStudents (
+DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;",
+                           """CREATE TABLE tblStudents (
                     StudentID INTEGER PRIMARY KEY AUTOINCREMENT,
                     FirstName VARCHAR(30) NOT NULL,
                     LastName VARCHAR(30),
                     ContactInfo TEXT,
-                    Notes TEXT
-                    );""","""CREATE TABLE tblCriteria (
+                    Notes TEXT);""",
+                            """CREATE TABLE tblCriteria (
                     CriteriaID INTEGER PRIMARY KEY AUTOINCREMENT,
                     TenseIs CHAR DEFAULT 0 CHECK(TenseIs IN ('PresentSimple','PresentContinuous','PastSimple','PastContinuous','FutureSimple')),
                     HasPreposition BOOLEAN DEFAULT 0,
                     HasConjunction BOOLEAN DEFAULT 0,
-                    AdjectiveIs CHAR DEFAULT 0 CHECK(AdjectiveIs IN ('Positive','Superlative','Comparative'))
-                    );""","""CREATE TABLE tblExercises (
+                    AdjectiveIs CHAR DEFAULT 0 CHECK(AdjectiveIs IN ('Positive','Superlative','Comparative')));""",
+                            """CREATE TABLE tblExercises (
                     ExerciseID INTEGER PRIMARY KEY AUTOINCREMENT,
                     Description TEXT,
                     Date DATE DEFAULT CURRENT_DATE,
                     CriteriaID INTEGER, 
                     FOREIGN KEY (CriteriaID) 
                         REFERENCES tblCriteria(CriteriaID)
-                        ON DELETE SET NULL
-                    );""","""CREATE TABLE tblSentences (
+                        ON DELETE SET NULL);""",
+                            """CREATE TABLE tblSentences (
                     SentenceID INTEGER PRIMARY KEY AUTOINCREMENT,
                     Sentence VARCHAR(100) NOT NULL, 
                     CorrectedSentence VARCHAR(100), 
@@ -337,8 +345,8 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                         ON DELETE CASCADE,
                     FOREIGN KEY (ExerciseID)
                         REFERENCES tblExercises(ExerciseID)
-                        ON DELETE CASCADE
-                    );""","""CREATE TABLE tblErrors (
+                        ON DELETE CASCADE);""",
+                            """CREATE TABLE tblErrors (
                     StudentID INTEGER NOT NULL,
                     ExerciseID INTEGER NOT NULL,
                     Spelling INTEGER DEFAULT 0,
@@ -356,13 +364,14 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;","""CREATE TABLE tblStuden
                         ON DELETE CASCADE,
                     FOREIGN KEY (ExerciseID)
                         REFERENCES tblExercises(ExerciseID)
-                        ON DELETE CASCADE
-                    );""","""CREATE TRIGGER sum_errors_insert AFTER INSERT ON tblErrors
+                        ON DELETE CASCADE);""",
+                            """CREATE TRIGGER sum_errors_insert AFTER INSERT ON tblErrors
                     WHEN NEW.Total= -1
                     BEGIN
                     UPDATE tblErrors
                     SET Total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Determiners + NEW.Prepositions + NEW.Adjectives + NEW.Adverbs;
-                    END;""","""CREATE TRIGGER sum_errors_update AFTER UPDATE ON tblErrors
+                    END;""",
+                            """CREATE TRIGGER sum_errors_update AFTER UPDATE ON tblErrors
                     WHEN NEW.total = OLD.total
                     BEGIN
                     UPDATE tblErrors

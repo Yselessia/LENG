@@ -1,10 +1,12 @@
 import sys
 import re                                      #imports regex
 import sqlite3
-import datetime
 import customtkinter as ctk                    #imports the ctk module
 from tkinter import *
+from datetime import datetime
 from PIL import ImageTk,Image
+from matplotlib import pyplot as plt, dates as mdates
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import DatastoreCreator
 import SentenceAnalysis
 
@@ -36,7 +38,7 @@ def error( err_messg="Unknown Error."):
     win_err = Tk()
     win_err.overrideredirect(True)
     win_err.geometry('400x200+400+200')
-    messg = Label(master= win_err, text= err_messg+"\nClosing program", font=('Arial',14), height=25, width=120)
+    messg = Label(master= win_err, text= err_messg+"\nClosing program", font=('Arial',14))
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master= win_err, text="close", command=lambda: ( win_err.destroy(), sys.exit()) , fg_color='black', hover_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
@@ -46,7 +48,7 @@ def dialogue(new_messg="Dialogue error."):
     win_messg.grab_set()
     win_messg.overrideredirect(True)
     win_messg.geometry('400x200+400+200')
-    messg = Label(master=win_messg, text=new_messg, font=('Arial',14), height=25, width=120)
+    messg = Label(master=win_messg, text=new_messg, font=('Arial',14))
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master=win_messg, text="close dialogue", command=lambda: (win_messg.destroy()) , fg_color='black', hover_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
@@ -56,7 +58,7 @@ def confirm_change(change_messg, root_tr=True):
     confirm = BooleanVar()
     win_check.overrideredirect(True)
     win_check.geometry('400x200+400+200')
-    messg = Label(master= win_check, text=change_messg, font=('Arial',16), height=25, width=120)
+    messg = Label(master= win_check, text=change_messg, font=('Arial',16))
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     cancel_btn = ctk.CTkButton(master= win_check, text="cancel", command=lambda: (confirm.set(False), win_check.destroy()), width=90, fg_color='black', hover_color='black', corner_radius=10)
     confirm_btn = ctk.CTkButton(master= win_check, text="confirm", command=lambda: (confirm.set(True), win_check.destroy()), width=90, fg_color='black', hover_color='black', corner_radius=10)
@@ -67,13 +69,13 @@ def confirm_change(change_messg, root_tr=True):
         win_check.mainloop()
     return confirm.get()
 
-def user_entry(new_messg="Enter text:"):
+def user_entry(prompt_messg="Enter text:"):
     win_entry = Toplevel(root)
     win_entry.grab_set()
     win_entry.overrideredirect(True)
     win_entry.geometry('400x200+400+200')
-    messg = Label(master=win_entry, text=new_messg, font=('Arial',14), height=25, width=120)
-    messg.place(relx=0.5, rely=0.4, anchor=N)
+    messg = Label(master=win_entry, text=prompt_messg, font=('Arial',14))
+    messg.place(relx=0.5, rely=0.2, anchor=N)
     entry_box = ctk.CTkEntry(master=win_entry, width=200, corner_radius=10, border_width=2)
     entry_box.place(relx=0.5, rely=0.6, anchor=CENTER)
     button = ctk.CTkButton(master=win_entry, text="enter", command=lambda: (win_entry.destroy()), fg_color='black', hover_color='black', corner_radius=10)
@@ -83,13 +85,13 @@ def user_entry(new_messg="Enter text:"):
     return user_text
 
 
-def  back_command():
+def back_command():
     if back[0] == True:
         back[1]()
-def make_commit_btn(frame, commit, messg="COMMIT"):
+def make_commit_btn(frame, commit, messg="COMMIT", xpos=0.5):
     global commit_btn
-    commit_btn = Button(frame, text=messg, command=lambda: commit(), font=('Arial',12), height=3, width=8, borderwidth=2)
-    commit_btn.place(relx=0.5, rely=0.9, anchor=S)
+    commit_btn = Button(frame, text=messg, command=lambda: commit(), font=('Arial', 13), height=3, width=10, borderwidth=2)
+    commit_btn.place(relx=xpos, rely=0.9, anchor=S)
     return commit_btn
 def set_icon(file):
     size= (70,70)
@@ -104,7 +106,7 @@ def label_box(label, ypos, frame, return_id=False):
         return label_id
 def date_formatted(string):
     try: 
-        datetime.datetime.strptime(string, '%Y-%m-%d') 
+        datetime.strptime(string, '%Y-%m-%d') 
         return True
     except ValueError:
         return False
@@ -129,14 +131,15 @@ def new_screen(stack_prev, page_title, scroll_state=False, right_state="normal",
     canvas.itemconfig(centre_win, state=centre_state)
     canvas.itemconfig(left_win, state=left_state)
     canvas.itemconfig(right_win, state=right_state)
+    try:
+        scrll_id.destroy()
+    except:
+        pass
+    
     if scroll_state == True:
         page_title = page_title.replace(" ","\n")
         xval = 288
     else:
-        try:
-            scrll_id.destroy()
-        except:
-            pass
         xval=588
     try:
         canvas.delete(title)
@@ -165,6 +168,7 @@ def bg_canvas():
     centre_frame = Frame (root, bg=bg_col2)
     centre_win = canvas.create_window(300, 588, window=centre_frame, height=300, width=300, anchor=S)
 
+
 def create_home():
     ex_create_btn = ctk.CTkButton(main_win_frame, text="CREATE AN EXERCISE", command=lambda: ex_create(),
                                            fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
@@ -192,8 +196,8 @@ def err_list_sql_format(all_errors_list,spell_error_count):
         values = [i[1] for i in all_errors_list if i[0] in field_names]
         all_errors_names = [i[0] for i in all_errors_list]
         err_num = 0
-        if 'verbHasSubject' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('verbHasSubject')][1]
+        if 'verbNoSubject' in all_errors_names:
+            err_num = err_num + all_errors_list[all_errors_names.index('verbNoSubject')][1]
         if 'verbRepeated' in all_errors_names:
             err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')][1]
         if 'nounRepeated' in all_errors_names:
@@ -207,7 +211,6 @@ def err_list_sql_format(all_errors_list,spell_error_count):
         fields = tuple(fields)
         values = tuple(values)
         return fields, values
-
 def err_list_readable(all_errors_names):
     readable_i = ""
     for i in all_errors_names:
@@ -221,25 +224,32 @@ def err_list_readable(all_errors_names):
     if readable_i == "":
         readable_i = "None"
     return readable_i
-            
 def add_sentence_commit():
     id_choice = confirm_id_select()
     sentence = sentence_entry.get()
     sentence = sentence.replace('\n','')
     x = sentence.replace(' ','')
-    if id_choice and x != '':
-        global ex_id, dictionary, all_patterns
-        all_errors_list, spell_error_count, sentence_new = SentenceAnalysis.main_algorithm(sentence, dictionary, all_patterns, dialogue, confirm_change, crit_choice_win, user_entry)
-        all_errors_names = [i[0] for i in all_errors_list]
-        if 'noVerbSubject' in all_errors_names:
-            dialogue("Sorry, this sentence cannot be marked")
-        else:
+    if not (id_choice and x != ''):
+        return None
+    global ex_id, dictionary, all_patterns
+    spell_error_count, error_sen_items = SentenceAnalysis.main_algorithm(sentence, dictionary, all_patterns, dialogue, confirm_change, crit_choice_win, user_entry)
+    all_errors_list, sentence_new = SentenceAnalysis.return_values(error_sen_items[0], sentence)
+    all_errors_names = [i[0] for i in all_errors_list]
+
+    cancel_save = True
+    if 'noVerbSubject' in all_errors_names:
+        dialogue("Sorry, this sentence cannot be marked.\nNo verb identified.")
+
+    else:
+        index = 1
+        while index < len(error_sen_items) and cancel_save == True:
             change_messg = "Corrected sentence:\n"+sentence_new
             confirm_a = confirm_change(change_messg)
-            readable_i = err_list_readable(all_errors_names)
-            change_messg = "Errors:\n"+ readable_i
-            confirm_b = confirm_change(change_messg)
-            if confirm_a == True and confirm_b == True:
+            if confirm_a == True:
+                readable_i = err_list_readable(all_errors_names)
+                change_messg = "Errors:\n"+ readable_i
+                confirm_b = confirm_change(change_messg)
+            if confirm_b and confirm_b == True:
                 cancel_save = False
                 fields, values = err_list_sql_format(all_errors_list, spell_error_count)
                 #Criteria <<<<<<<<
@@ -264,17 +274,19 @@ def add_sentence_commit():
                             cancel_save = True
             else:
                 cancel_save = True
+                all_errors_list, sentence_new = SentenceAnalysis.return_values(error_sen_items[index], sentence)
+                index += 1
 
-            if cancel_save == False:
-                insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
-                try:
-                    cursor.execute(insert_query, (sentence, sentence_new, id_choice, ex_id))
-                    connection.commit()
-                    dialogue(f"ExerciseID = {ex_id}\nStudentID = {id_choice}\nExercise saved.")
-                except:
-                    dialogue("Error saving sentence.\n Please try again.")
-            else:
-                dialogue("Sentence data has been discarded.")
+        if cancel_save == False:
+            insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
+            try:
+                cursor.execute(insert_query, (sentence, sentence_new, id_choice, ex_id))
+                connection.commit()
+                dialogue(f"ExerciseID = {ex_id}\nStudentID = {id_choice}\nExercise saved.")
+            except:
+                dialogue("Error saving sentence.\n Please try again.")
+        else:
+            dialogue("Sentence data has been discarded.")
 
 def add_sentence(analysis_online=True):
     if analysis_online == True:
@@ -288,21 +300,23 @@ def add_sentence(analysis_online=True):
     else:
         dialogue("Sentences cannot be added at this point.\nDictionary offline")
         return None
-
 def ex_create_commit():
     if not dictionary:
         dialogue("Cannot save exercise.\nSentence analysis unreachable")
         return None
-    new_ex = (descrip_entry.get(1.0,END), ex_date_entry.get())
-    x = new_ex[0].replace('\n','').replace(' ','')
-    if '' in new_ex or x=='':
+    date = ex_date_entry.get()
+    notes = descrip_entry.get(1.0,END), 
+    x = notes.replace('\n','').replace(' ','')
+    if '' in (date, x):
         dialogue("Please fill in all necessary fields marked *")
-    elif date_formatted(new_ex[1]) == False:
+    elif date_formatted(date) == False:
         dialogue("Cannot save exercise.\nCheck date is valid YYYY-MM-DD")
     else:
+        #makes the datetime more specific
+        date_spec = datetime.now().replace(day=date).strftime('%Y-%m-%d %H:%M:%S')
         try:
             insert_query = "INSERT INTO tblExercises (Description, Date) VALUES (?, ?)"
-            cursor.execute(insert_query, new_ex)
+            cursor.execute(insert_query, (notes, date_spec))
             criteria = require_entry.get()
             global ex_id
             ex_id = cursor.lastrowid
@@ -431,10 +445,64 @@ def record_edit():
                                            corner_radius=10, height=55, width=300)
     cancel_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 
+
+def plot_graph(x_list, y_list, title, student="student", lbl_list=None):
+    graph_win = Toplevel(root)
+    graph_win.geometry('500x500')
+    graph_win.title("Error-Time, "+student)
+    if not lbl_list:
+        lbl_list = ['spelling', 'verb order', 'subject agreement', 'criteria', 'determiners', 'prepositions', 'adjectives', 'adverbs']
+    fig, ax = plt.subplots()
+    for x, y, lbl in zip(x_list, y_list, lbl_list):
+        ax.plot(x, y, label=lbl)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
+    ax.set_xlabel('date', labelpad=10)
+    ax.set_ylabel('errors per exercise')
+    ax.set_title(title)
+    canvas = FigureCanvasTkAgg(fig, master=graph_win)
+    canvas.draw()
+    canvas.get_tk_widget().place(relheight=1, relwidth=1)
 def record_view():
+    def all_graph():
+        plot_graph(x_list[:-1], y_list[:-1], "All errors against time", student)
+    def total_graph():
+        plot_graph([x_list[-1]], [y_list[-1]], "Total errors against time", student, ["all errors"])
+        
     id_choice = confirm_id_select()
-    if id_choice:
-        pass
+    if not id_choice:
+        return None
+    select_query = """SELECT  main.*, errors.*, exercises.Date FROM tblStudents main
+    JOIN tblErrors errors ON main.StudentID = main.StudentID
+    JOIN tblExercises exercises ON errors.ExerciseID = exercises.ExerciseID
+    WHERE main.StudentID = ?;"""
+    cursor.execute(select_query, (id_choice,))
+    results = cursor.fetchall()
+    y_list = [[] for _ in range(9)]
+    x_list = [[] for _ in range(9)]
+    for i in range(len(results)):
+        for j in range(7, 16):
+            y_list[j-7].append(results[i][j])
+            x_list[j-7].append(datetime.strptime(results[i][-1], '%Y-%m-%d %H:%M:%S'))
+    #sorting by date:
+    for i in range(9):
+        data = list(zip(x_list[i], y_list[i]))
+        data.sort(key=lambda point: point[0])
+        x_list[i], y_list[i] = zip(*data)
+
+    #x_list, y_list, now contain 9 sublists each containing a coordinate integer or date
+    student = results[0][1] +" "+ results[0][2]
+
+    new_screen(record_view_choice, f"STUDENT {id_choice}", False)
+    create_stu_view()
+    make_commit_btn(right_frame, all_graph, "SEE\nALL\nERRORS", 0.33)
+    make_commit_btn(right_frame, total_graph, "SEE\nOVERALL\nPROGRESS", 0.75)
+    entry_widgets = [stu_id_entry, fore_name_entry, sur_name_entry, contact_entry, notes_entry]
+    stu_id_entry.configure(state='normal')
+    for i in range(len(entry_widgets)-1):
+        entry_widgets[i].insert(END, results[0][i])
+        entry_widgets[i].configure(state='readonly')
+    notes_entry.insert(1.0, results[0][4])
+    notes_entry.configure(height=100, state='disabled')
 def record_view_choice():
     new_screen(home,"VIEW STUDENT RECORDS", True, "hidden")
     make_commit_btn(left_frame, record_view, "SELECT")
@@ -442,35 +510,35 @@ def record_view_choice():
 
 def ex_view():
     id_choice = confirm_id_select('ex')
-    if id_choice:
-        try:
-            select_query = "SELECT * FROM tblExercises WHERE ExerciseID = ?"
-            cursor.execute(select_query, (id_choice,))
-            exercise_data = cursor.fetchone()
-        except:
-            dialogue("Database error.\nPlease try again")
-        if exercise_data:
-            new_screen(ex_view_choice, f"EXERCISE {id_choice}", True, "hidden")
-            label_box("EXERCISE ID", 0.05, left_frame)
-            exId_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
-            exId_entry.place(relx=0.25, rely=0.14)
-            exId_entry.insert(END, exercise_data[0])
-            exId_entry.configure(state='readonly')
-            label_box("EXERCISE DATE", 0.23, left_frame)
-            ex_date_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
-            ex_date_entry.place(relx=0.25, rely=0.32)
-            ex_date_entry.insert(END, exercise_data[2])
-            ex_date_entry.configure(state='readonly')
-            label_box("DESCRIPTION",0.41, left_frame, True)
-            descrip_entry = ctk.CTkTextbox(left_frame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
-            descrip_entry.place(relx=0.25, rely=0.50)
-            descrip_entry.insert(1.0, exercise_data[1])
-            descrip_entry.configure(state='disabled')
+    if not id_choice:
+        return None
+    try:
+        select_query = "SELECT * FROM tblExercises WHERE ExerciseID = ?"
+        cursor.execute(select_query, (id_choice,))
+        exercise_data = cursor.fetchone()
+    except:
+        dialogue("Database error.\nPlease try again")
+    if not exercise_data:
+        return None
+    new_screen(ex_view_choice, f"EXERCISE {id_choice}", True, "hidden")
+    label_box("EXERCISE ID", 0.05, left_frame)
+    exId_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
+    exId_entry.place(relx=0.25, rely=0.14)
+    exId_entry.insert(END, exercise_data[0])
+    exId_entry.configure(state='readonly')
+    label_box("EXERCISE DATE", 0.23, left_frame)
+    ex_date_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
+    ex_date_entry.place(relx=0.25, rely=0.32)
+    ex_date_entry.insert(END, exercise_data[2])
+    ex_date_entry.configure(state='readonly')
+    label_box("DESCRIPTION",0.41, left_frame, True)
+    descrip_entry = ctk.CTkTextbox(left_frame, width=200, height=150, corner_radius=10, border_width = 2, wrap=WORD,  font=('Arial', 14))
+    descrip_entry.place(relx=0.25, rely=0.50)
+    descrip_entry.insert(1.0, exercise_data[1])
+    descrip_entry.configure(state='disabled')
 
-            create_choice("sen", id_choice)
-
+    create_choice("sen", id_choice)
 def ex_view_choice():
-    new_screen(home, "")        #clears the scrll_state if its returned from ex_view
     new_screen(home, "VIEW EXERCISES", True, "hidden")
     make_commit_btn(left_frame, ex_view, "SELECT")
     create_choice('ex')
@@ -520,11 +588,12 @@ def stu_add():
 
 def stu_edit_c_commit():
     id_choice = confirm_id_select()
-    if id_choice:
-        select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = ?"
-        cursor.execute(select_query, (id_choice,))
-        results = cursor.fetchone()
-        stu_edit(id_choice, results)
+    if not id_choice:
+        return None
+    select_query = f"SELECT FirstName, LastName, ContactInfo, Notes FROM tblStudents WHERE StudentID = ?"
+    cursor.execute(select_query, (id_choice,))
+    results = cursor.fetchone()
+    stu_edit(id_choice, results)
 def stu_edit_choice(): 
     new_screen(record_edit,"EDIT STUDENT RECORD", True, "hidden")                
     make_commit_btn(left_frame, stu_edit_c_commit, "SELECT")
@@ -564,17 +633,18 @@ def stu_edit(id_choice, values):
 
 def stu_remove_commit():
     id_choice = confirm_id_select()
-    if id_choice:
-        confirm = confirm_change("Are you sure you want to\ndelete this record?")
-        if confirm == True:
-            try:
-                delete_query = "DELETE FROM tblStudents WHERE StudentID = ?"
-                connection.commit(delete_query,(id_choice,))
-                dialogue(f"Record for student {id_choice} deleted.")
-            except:
-                dialogue("Error updating student records.\n Please try again.")
-        else:
-            dialogue("Deletion canceled.")
+    if not id_choice:
+        return None
+    confirm = confirm_change("Are you sure you want to\ndelete this record?")
+    if confirm == True:
+        try:
+            delete_query = "DELETE FROM tblStudents WHERE StudentID = ?"
+            connection.commit(delete_query,(id_choice,))
+            dialogue(f"Record for student {id_choice} deleted.")
+        except:
+            dialogue("Error updating student records.\n Please try again.")
+    else:
+        dialogue("Deletion canceled.")
 def stu_remove():
     new_screen(record_edit, "DELETE STUDENT RECORD", True, "hidden")
     make_commit_btn(left_frame,  stu_remove_commit)
@@ -662,7 +732,7 @@ def create_choice(choose_item='stu', ex_id_choice=None):
         if choose_item=='stu':
             results_new = []
             for record in results:
-                error_val = record[len(record)-1] if record[len(record)-1] else 0
+                error_val = record[-1] if record[-1] else 0
                 index = 0
                 for i in range(len(results_new)):
                     error_i = results_new[i][len(record)-1] if results_new[i][len(record)-1] else 0
@@ -692,10 +762,10 @@ def create_choice(choose_item='stu', ex_id_choice=None):
                         break                                       #breaks if no criteria
     
     for row in results_list:
-        if choose_item != "sen":
-            item = '<'+row[0]+'> '+"  ".join(row[1:])
-        else:
+        if choose_item == "sen":
             item = row
+        else:
+            item = '<'+row[0]+'> '+"  ".join(row[1:])
         scrll_id.insert(END, item)
 
 
@@ -717,7 +787,7 @@ def set_connection():
                 connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
                 cursor = connection.cursor()
         else:
-            error("Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
+            error(f"Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
     finally:
         if connection:
             global crit_column_info
@@ -728,7 +798,7 @@ bg_col1 = '#e6e6e6'
 bg_col2 = '#4a4a7a'
 hover_col3 = '#8f8fad'
 back = [True, home]
-today = datetime.datetime.today().strftime('%Y-%m-%d')
+today = datetime.today().strftime('%Y-%m-%d')
 set_connection()
 root = Tk()
 root.geometry('800x600')
@@ -736,9 +806,10 @@ root.title("Language Analysis Nurturing Grammar")
 root.iconbitmap(WINDOW_ICON)
 icon1 = set_icon(LOGO)
 icon2 = set_icon(BACKICON)
+
 dictionary = DatastoreCreator.set_connection_dict(confirm_change, dialogue)
 all_patterns = SentenceAnalysis.compile_all_patterns()
 bg_canvas()
 create_home()
-home() 
+home()
 root.mainloop()
