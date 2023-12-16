@@ -335,7 +335,7 @@ def ex_create():
     new_screen(home,"CREATE EXERCISE")
     make_commit_btn(left_frame, ex_create_commit)
     label_box("EXERCISE ID", 0.1, left_frame)
-    exId_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    exId_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled', fg_color=hover_col3)
     exId_entry.place(relx=0.25, rely=0.17)
     label_box("EXERCISE DATE*", 0.31, left_frame)
     ex_date_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
@@ -547,7 +547,7 @@ def ex_view_choice():
 def create_stu_view():
     global stu_id_entry, fore_name_entry, sur_name_entry, contact_entry,  notes_entry
     label_box("STUDENT ID", 0.1, left_frame)
-    stu_id_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled')
+    stu_id_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, state='disabled', fg_color=hover_col3)
     stu_id_entry.place(relx=0.25, rely=0.17)
     label_box("FORENAME(S)*", 0.31, left_frame)
     fore_name_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2, font=('Arial', 14))
