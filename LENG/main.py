@@ -15,6 +15,7 @@ DATABASENAME = "langdatabase"
 LOGO = "logo"
 BACKICON = "backarrow"
 WINDOW_ICON = "logoicon.ico"
+TUTORIAL = "tutorial.txt"
 
 class ResizingCanvas(Canvas):                 
     def __init__(self,parent,**kwargs):
@@ -52,6 +53,7 @@ def dialogue(new_messg="Dialogue error."):
     messg.place(relx=0.5, rely=0.5, anchor=CENTER)
     button = ctk.CTkButton(master=win_messg, text="close dialogue", command=lambda: (win_messg.destroy()) , fg_color='black', hover_color='black', corner_radius=10)
     button.place(relx=0.5, rely=0.9, anchor=S)
+    return win_messg
 def confirm_change(change_messg, root_tr=True):
     win_check = Toplevel(root) if root_tr == True else Tk()
     win_check.grab_set()
@@ -90,7 +92,7 @@ def back_command():
         back[1]()
 def make_commit_btn(frame, commit, messg="COMMIT", xpos=0.5):
     global commit_btn
-    commit_btn = Button(frame, text=messg, command=lambda: commit(), font=('Arial', 13), height=3, width=10, borderwidth=2)
+    commit_btn = Button(frame, text=messg, command=lambda: commit(), font=('Arial', 12), height=3, width=10, borderwidth=2)
     commit_btn.place(relx=xpos, rely=0.9, anchor=S)
     return commit_btn
 def set_icon(file):
@@ -190,28 +192,33 @@ def home():
     new_screen(None, "NURTURING GRAMMAR MAIN MENU", False, "hidden", "hidden", "hidden", "normal", False)
 
 
-def err_list_sql_format(all_errors_list,spell_error_count):
+def err_list_sql_format(all_errors_list, spell_error_count):
         field_names = 'Adverbs','Adjectives','Prepositions','Determiners','SVAgreement'
-        fields = [i[0] for i in all_errors_list if i[0] in field_names]
-        values = [i[1] for i in all_errors_list if i[0] in field_names]
-        all_errors_names = [i[0] for i in all_errors_list]
         err_num = 0
-        if 'verbNoSubject' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('verbNoSubject')][1]
-        if 'verbRepeated' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')][1]
-        if 'nounRepeated' in all_errors_names:
-            err_num = err_num + all_errors_list[all_errors_names.index('nounRepeated')][1]
-        if err_num > 0:
-            fields.append('SVOOrder')
-            values.append(err_num)
+        fields, values = [], []
+        if all_errors_list:
+            fields = [i[0] for i in all_errors_list if i[0] in field_names]
+            values = [i[1] for i in all_errors_list if i[0] in field_names]
+            all_errors_names = [i[0] for i in all_errors_list]
+            if 'verbNoSubject' in all_errors_names:
+                err_num = err_num + all_errors_list[all_errors_names.index('verbNoSubject')][1]
+            if 'verbRepeated' in all_errors_names:
+                err_num = err_num + all_errors_list[all_errors_names.index('verbRepeated')][1]
+            if 'nounRepeated' in all_errors_names:
+                err_num = err_num + all_errors_list[all_errors_names.index('nounRepeated')][1]
+            if err_num > 0:
+                fields.append('SVOOrder')
+                values.append(err_num)
         if spell_error_count > 0:
             fields.append('Spelling')
             values.append(spell_error_count)
         fields = tuple(fields)
         values = tuple(values)
         return fields, values
-def err_list_readable(all_errors_names):
+def err_list_readable(all_errors_list):
+    if not all_errors_list:
+        return "None"
+    all_errors_names = [i[0] for i in all_errors_list]
     readable_i = ""
     for i in all_errors_names:
         list_i = re.split(r'([A-Z])', i)
@@ -221,8 +228,7 @@ def err_list_readable(all_errors_names):
             else:
                 readable_i = readable_i + list_i[j].lower()
         readable_i = readable_i + ","
-    if readable_i == "":
-        readable_i = "None"
+
     return readable_i
 def add_sentence_commit():
     id_choice = confirm_id_select()
@@ -233,23 +239,23 @@ def add_sentence_commit():
         return None
     global ex_id, dictionary, all_patterns
     spell_error_count, error_sen_items = SentenceAnalysis.main_algorithm(sentence, dictionary, all_patterns, dialogue, confirm_change, crit_choice_win, user_entry)
+    
     all_errors_list, sentence_new = SentenceAnalysis.return_values(error_sen_items[0], sentence)
-    all_errors_names = [i[0] for i in all_errors_list]
 
-    cancel_save = True
-    if 'noVerbSubject' in all_errors_names:
+    if all_errors_list and 'noVerbSubject' in [i[0] for i in all_errors_list]:
         dialogue("Sorry, this sentence cannot be marked.\nNo verb identified.")
-
     else:
         index = 1
-        while index < len(error_sen_items) and cancel_save == True:
+        cancel_save = True
+        while (index==1 or index < len(error_sen_items)) and cancel_save == True:
             change_messg = "Corrected sentence:\n"+sentence_new
             confirm_a = confirm_change(change_messg)
+            confirm_b = False
             if confirm_a == True:
-                readable_i = err_list_readable(all_errors_names)
+                readable_i = err_list_readable(all_errors_list)
                 change_messg = "Errors:\n"+ readable_i
                 confirm_b = confirm_change(change_messg)
-            if confirm_b and confirm_b == True:
+            if confirm_b == True:
                 cancel_save = False
                 fields, values = err_list_sql_format(all_errors_list, spell_error_count)
                 #Criteria <<<<<<<<
@@ -272,10 +278,15 @@ def add_sentence_commit():
                         confirm = confirm_change("Error saving correction data.\nClick confirm to save the sentence anyway\nor cancel to delete sentence.")
                         if confirm == False:
                             cancel_save = True
-            else:
+            elif len(error_sen_items) > 1:
                 cancel_save = True
                 all_errors_list, sentence_new = SentenceAnalysis.return_values(error_sen_items[index], sentence)
+                if all_errors_list and 'noVerbSubject' in [i[0] for i in all_errors_list]:
+                    dialogue("Sorry, this sentence cannot be marked.\nNo verb identified.")
+                    break
                 index += 1
+            else:
+                break
 
         if cancel_save == False:
             insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
@@ -305,7 +316,7 @@ def ex_create_commit():
         dialogue("Cannot save exercise.\nSentence analysis unreachable")
         return None
     date = ex_date_entry.get()
-    notes = descrip_entry.get(1.0,END), 
+    notes = descrip_entry.get(1.0,END) 
     x = notes.replace('\n','').replace(' ','')
     if '' in (date, x):
         dialogue("Please fill in all necessary fields marked *")
@@ -313,7 +324,8 @@ def ex_create_commit():
         dialogue("Cannot save exercise.\nCheck date is valid YYYY-MM-DD")
     else:
         #makes the datetime more specific
-        date_spec = datetime.now().replace(day=date).strftime('%Y-%m-%d %H:%M:%S')
+        date = datetime.strptime(date, '%Y-%m-%d')
+        date_spec = datetime.now().replace(day=date.day, month=date.month, year=date.year).strftime('%Y-%m-%d %H:%M:%S')
         try:
             insert_query = "INSERT INTO tblExercises (Description, Date) VALUES (?, ?)"
             cursor.execute(insert_query, (notes, date_spec))
@@ -342,7 +354,7 @@ def ex_create():
     ex_date_entry.insert(END, today)
     ex_date_entry.place(relx=0.25, rely=0.39)
     label_box("REQUIREMENT",0.11, right_frame)
-    require_entry = ctk.CTkEntry(right_frame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14), state='readonly')
+    require_entry = ctk.CTkEntry(right_frame, width=180, corner_radius=10, border_width = 2, font=('Arial', 14), state='readonly', fg_color=hover_col3)
     require_entry.place(relx=0.25, rely=0.17)
     add_require = Button(right_frame, text="ADD", command=lambda: crit_choice_win(), font=('Arial',10), width=5, borderwidth=2)
     add_require.place(relx=0.8, rely=0.17)
@@ -491,7 +503,9 @@ def record_view():
         x_list[i], y_list[i] = zip(*data)
 
     #x_list, y_list, now contain 9 sublists each containing a coordinate integer or date
-    student = results[0][1] +" "+ results[0][2]
+    student = results[0][1]
+    if results[0][2]:
+        student = student +" "+ results[0][2]
 
     new_screen(record_view_choice, f"STUDENT {id_choice}", False)
     create_stu_view()
@@ -500,9 +514,9 @@ def record_view():
     entry_widgets = [stu_id_entry, fore_name_entry, sur_name_entry, contact_entry, notes_entry]
     stu_id_entry.configure(state='normal')
     for i in range(len(entry_widgets)-1):
-        entry_widgets[i].insert(END, results[0][i])
+        entry_widgets[i].insert(END, str(results[0][i]))
         entry_widgets[i].configure(state='readonly')
-    notes_entry.insert(1.0, results[0][4])
+    notes_entry.insert(1.0, str(results[0][4]))
     notes_entry.configure(height=100, state='disabled')
 def record_view_choice():
     new_screen(home,"VIEW STUDENT RECORDS", True, "hidden")
@@ -795,12 +809,27 @@ def set_connection():
             cursor.execute("PRAGMA table_info(tblCriteria)")
             crit_column_info = cursor.fetchall()[1:]
 
+def tutorial():
+    with open(TUTORIAL, 'r') as file:
+        t_text = file.read()
+    if not t_text:
+        #does nothing if tutorial has been deleted
+        return
+    win_messg = dialogue(t_text)
+    # Update the win_messg geometry to fit the text
+    win_messg.geometry("1150x550-150-100")
+    win_messg.wait_window()
+    with open(TUTORIAL, 'w'):
+        pass
+
+
 bg_col1 = '#e6e6e6'
 bg_col2 = '#4a4a7a'
 hover_col3 = '#8f8fad'
 back = [True, home]
 today = datetime.today().strftime('%Y-%m-%d')
 set_connection()
+
 root = Tk()
 root.geometry('800x600')
 root.title("Language Analysis Nurturing Grammar")
@@ -813,4 +842,6 @@ all_patterns = SentenceAnalysis.compile_all_patterns()
 bg_canvas()
 create_home()
 home()
+tutorial()
+
 root.mainloop()

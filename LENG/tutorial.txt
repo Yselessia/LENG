@@ -1,0 +1,19 @@
+Before using the program, you must add students to the database by clicking EDIT RECORDS => ADD STUDENT 
+Adding or editing student records is under EDIT RECORDS too.
+
+The COMMIT button will save your student record to the database. 
+When the record has been saved, you can click the LANG home button to return to the previous menu.
+The BACK or LANG HOME button will always be in the top left corner, but clicking it won't save any changes you've made. 
+
+You can add exercises by clicking CREATE EXERCISE 
+Again, COMMIT will save the exercise, and the ID will be automatically generated.
+Note it down if you want to see the exercise later! You'll also be able to find exercises by date.
+Add sentences to the exercise to let the program mark any errors. 
+
+If the sentence isn't saved (there should be a pop-up to confirm it) relaunching the program may fix the bug.
+Adding multiple words to the dictionary without relaunching may cause random errors.
+
+You'll be able to see your students' progress by clicking VIEW RECORDS and selecting SEE ERRORS or SEE PROGRESS 
+You can see the sentences later by selecting the exercise in VIEW EXERCISES
+
+Thanks for using the LANG Language Analysis program tutorial!
