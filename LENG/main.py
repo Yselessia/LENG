@@ -46,7 +46,6 @@ def error( err_messg="Unknown Error."):
     win_err.mainloop()
 def dialogue(new_messg="Dialogue error."):
     win_messg = Toplevel(root)
-    win_messg.grab_set()
     win_messg.overrideredirect(True)
     win_messg.geometry('400x200+400+200')
     messg = Label(master=win_messg, text=new_messg, font=('Arial',14))
@@ -116,17 +115,15 @@ def date_formatted(string):
 def clear_frame(frame):
    for widgets in frame.winfo_children():
       widgets.destroy()
-def new_screen(stack_prev, page_title, scroll_state=False, right_state="normal", left_state="normal", centre_state="hidden", main_state="hidden", call_true=True):
+def new_screen(stack_prev, page_title, scroll_state=False, right_state="normal", left_state="normal", centre_state="hidden", img=None, main_state="hidden", call_true=True):
+    if img == None:
+        img = icon2
     global title, back
     back[0] = call_true
     back[1] = stack_prev
     clear_frame(right_frame)
     clear_frame(left_frame)
     clear_frame(centre_frame)
-    img = icon1
-    if stack_prev:
-        if stack_prev != home:
-            img = icon2
     back_button.configure(image=img)
     back_button.image = img
     canvas.itemconfig(main_win, state=main_state)
@@ -172,14 +169,14 @@ def bg_canvas():
 
 
 def create_home():
-    ex_create_btn = ctk.CTkButton(main_win_frame, text="CREATE AN EXERCISE", command=lambda: ex_create(),
-                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
-                                           corner_radius=10, height=55, width=300)
-    ex_create_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
     record_edit_btn = ctk.CTkButton(main_win_frame, text="EDIT STUDENT RECORDS", command=lambda: record_edit(),
                                            fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
-    record_edit_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
+    record_edit_btn.place(relx=0.5, rely=0.11, anchor=CENTER)
+    ex_create_btn = ctk.CTkButton(main_win_frame, text="CREATE AN EXERCISE", command=lambda: ex_create(),
+                                           fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
+                                           corner_radius=10, height=55, width=300)
+    ex_create_btn.place(relx=0.5, rely=0.35, anchor=CENTER)
     record_view_btn = ctk.CTkButton(main_win_frame, text="VIEW STUDENT RECORDS", command=lambda: record_view_choice(),
                                            fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
@@ -189,7 +186,7 @@ def create_home():
                                            corner_radius=10, height=55, width=300)
     ex_view_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
 def home():
-    new_screen(None, "NURTURING GRAMMAR MAIN MENU", False, "hidden", "hidden", "hidden", "normal", False)
+    new_screen(None, "NURTURING GRAMMAR MAIN MENU", False, "hidden", "hidden", "hidden", icon1, "normal", False)
 
 
 def err_list_sql_format(all_errors_list, spell_error_count):
@@ -231,13 +228,16 @@ def err_list_readable(all_errors_list):
 
     return readable_i
 def add_sentence_commit():
+    global ex_id, dictionary, all_patterns
+    if not dictionary:
+        dialogue("Cannot add.\nDictionary offline")
+        return None
     id_choice = confirm_id_select()
     sentence = sentence_entry.get()
     sentence = sentence.replace('\n','')
     x = sentence.replace(' ','')
     if not (id_choice and x != ''):
         return None
-    global ex_id, dictionary, all_patterns
     spell_error_count, error_sen_items = SentenceAnalysis.main_algorithm(sentence, dictionary, all_patterns, dialogue, confirm_change, crit_choice_win, user_entry)
     
     all_errors_list, sentence_new = SentenceAnalysis.return_values(error_sen_items[0], sentence)
@@ -268,7 +268,7 @@ def add_sentence_commit():
                         pass
 
                     if existing_record:
-                        update_query = f"UPDATE tblErrors SET {', '.join(field + ' = ?' for field in fields)} WHERE StudentID = ? AND ExerciseID = ?"
+                        update_query = f"UPDATE tblErrors SET {', '.join(field + ' = ' + field + ' + ?' for field in fields)} WHERE StudentID = ? AND ExerciseID = ?"
                     else:
                         update_query = f"INSERT INTO tblErrors ({', '.join(fields)}, StudentID, ExerciseID) VALUES ({', '.join(['?'] * (len(fields)+2))})"
                     try:
@@ -299,22 +299,118 @@ def add_sentence_commit():
         else:
             dialogue("Sentence data has been discarded.")
 
-def add_sentence(analysis_online=True):
-    if analysis_online == True:
-        global sentence_entry
-        new_screen(home, "CREATE EXERCISE", True)
-        commit_btn = make_commit_btn(left_frame, add_sentence_commit, "SAVE")
-        label_box("ENTER SENTENCE", 0.47, left_frame)
-        sentence_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
-        sentence_entry.place(relx=0.25, rely=0.54)
-        create_choice()
+
+def manual_sentence_commit():
+    global sentence_entry, sentence_c_entry, err_entries, ex_id
+    id_choice = confirm_id_select()
+    sentence = sentence_entry.get()
+    sentence = sentence.replace('\n','')
+    
+    new_sentence = sentence_c_entry.get()
+    new_sentence = new_sentence.replace('\n','')
+    x = sentence.replace(' ',''), new_sentence.replace(' ','')
+    if not (id_choice and '' not in x):
+        return None
+    numbers = True
+    err_nums = []
+    for i in err_entries:
+        num = i[0].get().replace(' ', '')
+        if num == "":
+            num = "0"
+        try:
+            err_nums.append(int(num))
+        except:
+            numbers = False
+    err_nums = tuple(err_nums)
+    if sentence != new_sentence:
+        match = False
     else:
-        dialogue("Sentences cannot be added at this point.\nDictionary offline")
+        match = True
+    for i in err_nums:
+        if i != 0:
+            match = not match
+            break
+
+    if False in (numbers, match):
+        if numbers == False:
+            dialogue("Please enter numbers\nto the error fields")
+        else:
+            dialogue("The number of errors\ndoes not match")
         return None
+    
+    select_query = "SELECT 1 FROM tblErrors WHERE StudentID = ? AND ExerciseID = ?"
+    try:
+        cursor.execute(select_query, (id_choice, ex_id))
+        existing_record = cursor.fetchone() #Fetch one row (if any) holding "1"
+    except:
+        pass
+
+    if existing_record:
+        update_query = f"UPDATE tblErrors SET {', '.join(field[1] + ' = ' + field[1] + ' + ?' for field in err_entries)}  WHERE StudentID = ? AND ExerciseID = ?"
+    else:
+        update_query = f"INSERT INTO tblErrors ({', '.join(field[1] for field in err_entries)}, StudentID, ExerciseID) VALUES ({', '.join(['?'] * (len(err_entries)+2))})"
+    cancel_save = False
+    try:
+        cursor.execute(update_query, err_nums+(id_choice, ex_id))
+        connection.commit()
+    except:
+        confirm = confirm_change("Error saving correction data.\nClick confirm to save the sentence anyway\nor cancel to delete sentence.")
+        if confirm == False:
+            cancel_save = True
+        
+    if cancel_save == False:
+        insert_query = "INSERT INTO tblSentences (Sentence, CorrectedSentence, StudentID, ExerciseID) VALUES (?, ?, ?, ?)"
+        try:
+            cursor.execute(insert_query, (sentence, new_sentence, id_choice, ex_id))
+            connection.commit()
+            dialogue(f"ExerciseID = {ex_id}\nStudentID = {id_choice}\nExercise saved.")
+        except:
+            dialogue("Error saving sentence.\n Please try again.")
+    else:
+        dialogue("Sentence data has been discarded.")
+def manual_sentence():
+    global sentence_entry, id_entry, sentence_c_entry, err_entries
+    user_sen = sentence_entry.get()
+    user_id = id_entry.get()
+    new_screen(add_sentence, "CREATE EXERCISE")
+
+    label_box("STUDENT ID*", 0.12, left_frame)
+    id_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
+    id_entry.place(relx=0.25, rely=0.19)
+    id_entry.insert(0, user_id)
+    label_box("ENTER SENTENCE*", 0.32, left_frame)
+    sentence_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
+    sentence_entry.place(relx=0.25, rely=0.39)
+    sentence_entry.insert(0, user_sen)
+    label_box("ENTER CORRECTED SENTENCE*", 0.52, left_frame)
+    sentence_c_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
+    sentence_c_entry.place(relx=0.25, rely=0.59)
+    make_commit_btn(left_frame, manual_sentence_commit, "SAVE")
+
+    label_box("ENTER NUMBER OF ERRORS IN:", 0.1, right_frame)
+    err_type = [('Spelling', "Spelling"), ('SVOOrder', "Subject-Verb Order"), ('SVAgreement',"Subject-Verb Agreement"), 
+                ('Criteria',"Use of Requested Elements"), ('Determiners',"Articles/Determiners"), ('Prepositions', "Prepositions"),
+                ('Adjectives', "Adjectives"), ('Adverbs', "Adverbs")]
+    err_entries = []
+    entry_height = 0.19
+    for i in range(len(err_type)):
+        label_box(err_type[i][1], entry_height, right_frame)
+        err_entries.append("")
+        err_entries[i] = (ctk.CTkEntry(right_frame, width=50, corner_radius=10, border_width=2), err_type[i][0])
+        err_entries[i][0].place(relx=0.6, rely=entry_height)
+        entry_height +=0.09
+
+def add_sentence():
+    global sentence_entry
+    new_screen(home, "CREATE EXERCISE", True)
+    make_commit_btn(left_frame, add_sentence_commit, "ADD WITH\nANALYSIS\nPROGRAM", 0.67)
+    make_commit_btn(left_frame, manual_sentence, "ADD\nMANUALLY", 0.25)
+    label_box("ENTER SENTENCE", 0.47, left_frame)
+    sentence_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
+    sentence_entry.place(relx=0.25, rely=0.54)
+    create_choice()
+
 def ex_create_commit():
-    if not dictionary:
-        dialogue("Cannot save exercise.\nSentence analysis unreachable")
-        return None
     date = ex_date_entry.get()
     notes = descrip_entry.get(1.0,END) 
     x = notes.replace('\n','').replace(' ','')
@@ -439,7 +535,7 @@ def is_check_constraint(column_name):
         return None
 
 def record_edit():
-    new_screen(home, "EDIT RECORDS", False, "hidden", "hidden", "normal")
+    new_screen(home, "EDIT RECORDS", False, "hidden", "hidden", "normal", icon1)
     stu_add_btn = ctk.CTkButton(centre_frame, text="ADD STUDENT", command=lambda: stu_add(),
                                            fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
@@ -460,14 +556,23 @@ def record_edit():
 
 def plot_graph(x_list, y_list, title, student="student", lbl_list=None):
     graph_win = Toplevel(root)
-    graph_win.geometry('500x500')
+    graph_win.geometry('800x500')
     graph_win.title("Error-Time, "+student)
     if not lbl_list:
         lbl_list = ['spelling', 'verb order', 'subject agreement', 'criteria', 'determiners', 'prepositions', 'adjectives', 'adverbs']
     fig, ax = plt.subplots()
+
     for x, y, lbl in zip(x_list, y_list, lbl_list):
-        ax.plot(x, y, label=lbl)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
+        ratio_y_0 = len([i for i in y if i != 0])/(x[-1] - x[0]).days
+        if ratio_y_0==0:
+            pass
+        elif ratio_y_0 < 0.2:
+            scatter = ax.scatter(x, y)
+            ax.plot(x, y, linestyle='dashed', color=scatter.get_facecolor()[0], label=lbl)
+        else:
+            ax.plot(x, y, linestyle='dashed', label=lbl)
+
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m %H'))
     ax.set_xlabel('date', labelpad=10)
     ax.set_ylabel('errors per exercise')
     ax.set_title(title)
@@ -485,7 +590,7 @@ def record_view():
     if not id_choice:
         return None
     select_query = """SELECT  main.*, errors.*, exercises.Date FROM tblStudents main
-    JOIN tblErrors errors ON main.StudentID = main.StudentID
+    JOIN tblErrors errors ON main.StudentID = errors.StudentID
     JOIN tblExercises exercises ON errors.ExerciseID = exercises.ExerciseID
     WHERE main.StudentID = ?;"""
     cursor.execute(select_query, (id_choice,))
@@ -801,6 +906,7 @@ def set_connection():
             else:
                 connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
                 cursor = connection.cursor()
+                tutorial()
         else:
             error(f"Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
     finally:
@@ -814,14 +920,10 @@ def tutorial():
         t_text = file.read()
     if not t_text:
         #does nothing if tutorial has been deleted
-        return
+        return None
     win_messg = dialogue(t_text)
     # Update the win_messg geometry to fit the text
-    win_messg.geometry("1150x550-150-100")
-    win_messg.wait_window()
-    with open(TUTORIAL, 'w'):
-        pass
-
+    win_messg.geometry("1150x570-150-100")
 
 bg_col1 = '#e6e6e6'
 bg_col2 = '#4a4a7a'
@@ -831,7 +933,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 set_connection()
 
 root = Tk()
-root.geometry('800x600')
+root.geometry('900x675')
 root.title("Language Analysis Nurturing Grammar")
 root.iconbitmap(WINDOW_ICON)
 icon1 = set_icon(LOGO)
@@ -845,3 +947,4 @@ home()
 tutorial()
 
 root.mainloop()
+sys.exit()

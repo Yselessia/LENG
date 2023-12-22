@@ -252,6 +252,7 @@ def create_dictionary():
     dictionary["he"] = ["pron", True, "they"]           #my wordlist had he but not she. howwwwwwww
     dictionary["this"] = ["det", True, "these"]
     dictionary["that"] = ["det", True, "those"]
+    dictionary["to"] = ["prep", False]
     
     key_list = list(dictionary.keys())
     value_list = list(dictionary.values())
