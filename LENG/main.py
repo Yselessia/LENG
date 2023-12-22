@@ -944,7 +944,6 @@ all_patterns = SentenceAnalysis.compile_all_patterns()
 bg_canvas()
 create_home()
 home()
-tutorial()
 
 root.mainloop()
 sys.exit()
