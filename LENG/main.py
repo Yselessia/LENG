@@ -563,14 +563,8 @@ def plot_graph(x_list, y_list, title, student="student", lbl_list=None):
     fig, ax = plt.subplots()
 
     for x, y, lbl in zip(x_list, y_list, lbl_list):
-        ratio_y_0 = len([i for i in y if i != 0])/(x[-1] - x[0]).days
-        if ratio_y_0==0:
-            pass
-        elif ratio_y_0 < 0.2:
-            scatter = ax.scatter(x, y)
-            ax.plot(x, y, linestyle='dashed', color=scatter.get_facecolor()[0], label=lbl)
-        else:
-            ax.plot(x, y, linestyle='dashed', label=lbl)
+        scatter = ax.scatter(x, y)
+        ax.plot(x, y, linestyle='dashed', color=scatter.get_facecolor(), label=lbl)
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m %H'))
     ax.set_xlabel('date', labelpad=10)
@@ -584,6 +578,10 @@ def record_view():
     def all_graph():
         plot_graph(x_list[:-1], y_list[:-1], "All errors against time", student)
     def total_graph():
+        y_list[-1] = []
+        for time in x_list[-1]:
+            y_list[-1].append( sum([y_list[j][x_list[j].index(time)] for j in range(len(y_list[:-1]))  if time in x_list[j]]))
+
         plot_graph([x_list[-1]], [y_list[-1]], "Total errors against time", student, ["all errors"])
         
     id_choice = confirm_id_select()
@@ -759,7 +757,8 @@ def stu_remove_commit():
     if confirm == True:
         try:
             delete_query = "DELETE FROM tblStudents WHERE StudentID = ?"
-            connection.commit(delete_query,(id_choice,))
+            connection.execute(delete_query,(str(id_choice),))
+            connection.commit()
             dialogue(f"Record for student {id_choice} deleted.")
         except:
             dialogue("Error updating student records.\n Please try again.")
@@ -837,9 +836,12 @@ def create_choice(choose_item='stu', ex_id_choice=None):
     if choose_item == "sen":
         scrll_id.insert(END, "Sentences:\n\n")
         for row in range(len(results)):
-            results_list.append(results[row][2]+" "+results[row][3]+":")
-            results_list.append(results[row][0])
-            results_list.append(results[row][1])
+            print(results[0])
+            name = results[row][2]+" "+results[row][3]+":" if results[row][3] else results[row][2]+":"
+            results_list.append(name)
+            mark = "✗" if results[row][0] != results[row][1] else ""
+            results_list.append(results[row][0] + mark)
+            results_list.append(results[row][1] + "✔")
             if len(results_list) > 3:
                 i = (3*row)-3
                 while ":" not in results_list[i] and i >= 3:
