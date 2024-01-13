@@ -175,13 +175,6 @@ def create_dictionary():
                     except:
                         continue
         
-        current_file = "error.."
-        data = dictionary["be"]
-        data[1] = True                              #True symbolises that the word is irregular 
-        data.append(["am","is","were","been","was","are"])   #take note! this one is super-irregular.>
-        dictionary[key]= data                       #>You can check for it by looking at the length of the irregforms array>
-                                                    #>or deal with it entirely separately!
-
         current_file = FILEIRREGN
         with open(FILEIRREGN+".txt","r") as file:            #nouns
             f= file.read().lower()
@@ -243,8 +236,13 @@ def create_dictionary():
     except:
         return f"{current_file}.txt not found"
     
-    
-    #here True is used to signal that there is data in value[2], although the words are not irregular
+
+    data = dictionary["be"]
+    data[1] = True
+    #True symbolises that the word is irregular. take note! this one is super-irregular.
+    data.append(["am","is","were","been","was","are"])
+    dictionary[key]= data
+    #You can check for it by looking at the length of the irregforms array or deal with it entirely separately!
     dictionary["a"] = ["article", True, "some"]
     dictionary["an"] = ["article", True, "some"]
     dictionary["the"] = ["article", True, "the"]
@@ -269,7 +267,10 @@ def create_dictionary():
     delete_list = dictionary[""]
     del dictionary[""]
     for i in delete_list:
-        del dictionary[i]
+        try:
+            del dictionary[i]
+        except:
+            pass
     try:
         with open(DICTFILE+".json", "w") as file:      
             json.dump(dictionary, file)
@@ -378,7 +379,6 @@ DATABASE_CREATE_QUERIES = ("PRAGMA foreign_keys = ON;",
                     UPDATE tblErrors
                     SET total = NEW.Spelling + NEW.SVOOrder + NEW.SVAgreement + NEW.Criteria + NEW.Determiners + NEW.Prepositions + NEW.Adjectives + NEW.Adverbs;
                     END;""")
-
 
 #error = create_database()
 #if error:

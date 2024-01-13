@@ -299,7 +299,6 @@ def add_sentence_commit():
         else:
             dialogue("Sentence data has been discarded.")
 
-
 def manual_sentence_commit():
     global sentence_entry, sentence_c_entry, err_entries, ex_id
     id_choice = confirm_id_select()
@@ -372,7 +371,7 @@ def manual_sentence():
     global sentence_entry, id_entry, sentence_c_entry, err_entries
     user_sen = sentence_entry.get()
     user_id = id_entry.get()
-    new_screen(add_sentence, "CREATE EXERCISE")
+    new_screen(add_sentence, "MARKING SENTENCE")
 
     label_box("STUDENT ID*", 0.12, left_frame)
     id_entry = ctk.CTkEntry(left_frame, width=200, corner_radius=10, border_width = 2)
@@ -402,7 +401,7 @@ def manual_sentence():
 
 def add_sentence():
     global sentence_entry
-    new_screen(home, "CREATE EXERCISE", True)
+    new_screen(home, "ADD SENTENCES\nTO EXERCISE", True)
     make_commit_btn(left_frame, add_sentence_commit, "ADD WITH\nANALYSIS\nPROGRAM", 0.67)
     make_commit_btn(left_frame, manual_sentence, "ADD\nMANUALLY", 0.25)
     label_box("ENTER SENTENCE", 0.47, left_frame)
@@ -534,6 +533,7 @@ def is_check_constraint(column_name):
             clear_req()      # <<<<<<<
         return None
 
+
 def record_edit():
     new_screen(home, "EDIT RECORDS", False, "hidden", "hidden", "normal", icon1)
     stu_add_btn = ctk.CTkButton(centre_frame, text="ADD STUDENT", command=lambda: stu_add(),
@@ -552,7 +552,6 @@ def record_edit():
                                            fg_color=bg_col1, bg_color=bg_col2, hover_color=hover_col3, text_color='black', font=('Arial',20), 
                                            corner_radius=10, height=55, width=300)
     cancel_btn.place(relx=0.5, rely=0.83, anchor=CENTER)
-
 
 def plot_graph(x_list, y_list, title, student="student", lbl_list=None):
     graph_win = Toplevel(root)
@@ -908,7 +907,7 @@ def set_connection():
             else:
                 connection = sqlite3.connect(f'file:{DATABASENAME}.db?mode=rw', uri=True)
                 cursor = connection.cursor()
-                tutorial()
+                #tutorial()
         else:
             error(f"Error: Unable to access database.\nCheck directories for {DATABASENAME}.db")
     finally:

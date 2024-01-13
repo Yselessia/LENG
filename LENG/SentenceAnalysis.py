@@ -273,26 +273,7 @@ def add_word(orig_word):
             except:
                 dictionary[my_word] = [selected_pos, False]
         else:
-            try:
-                if selected_pos == "n":
-                    my_word = user_entry("Enter singular:")
-                    irreg_inputs = user_entry("Enter plural:")
-                elif selected_pos == "adj":
-                    my_word = user_entry("Enter positive:")
-                    irreg_inputs = [user_entry("Enter comparative:")]
-                    irreg_inputs.append( user_entry("Enter superlative:"))
-                elif selected_pos == "v":
-                    my_word = user_entry("Enter infinitive:")
-                    irreg_inputs = [my_word]
-                    irreg_inputs.append( user_entry("Enter third person present:"))
-                    irreg_inputs.append( user_entry("Enter simple past tense:"))
-                    irreg_inputs.append( user_entry("Enter past participle:"))
-                else:
-                    raise Exception
-                if not dictionary[my_word] or dictionary[my_word][0] == selected_pos:
-                    dictionary[my_word] = [selected_pos, True, irreg_inputs]
-            except:
-                dialogue("Unable to parse.\nDictionary edits cancelled.")
+            dialogue("Unable to add.\nDictionary edits cancelled.")
         try:
             with open(DICTFILE+".json", "w") as file:      
                 json.dump(dictionary, file)
@@ -862,7 +843,6 @@ def correct_sva(all_errors, err_positions, pos_list, sentence):
         else:
             index = 0
     return all_errors_hold, sentence
-
 #returns all_errors_list, sentence_new, spell_error_count
 
 
